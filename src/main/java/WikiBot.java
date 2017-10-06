@@ -16,16 +16,19 @@ public class WikiBot extends TelegramLongPollingBot {
         Long chatId;
         String textForReply;
         int indexOfuser;
+        Integer userId;
         // анализируем полученный апдейт
         // смотрим есть ли текст в этом сообщении или это колбэк запрос
         // если есть текст, то это сообщение от старого или нового пользователя
         if (!update.hasCallbackQuery()){
             // инициализируем переменные, объявленные раннее
             chatId = update.getMessage().getChat().getId();
+
             String messageFromLastUpdate = update.getMessage().getText();
             // проверить новый это или старый пользователь
             // получаем ИД пользователя из апдейта
-            Integer userId = update.getMessage().getFrom().getId();
+            userId = update.getMessage().getFrom().getId();
+
             // смотрим изветнсый это пользователь или нет
             if (!User.isUserOld(userId)){
                 // создать нового пользователя
@@ -51,14 +54,16 @@ public class WikiBot extends TelegramLongPollingBot {
                 // устанавливаем последнее сообщение пользователя
                 usersList.get(indexOfuser).setLastSearchMessage(messageFromLastUpdate);
                 // ищем в википедии текст статьи и сохраняем в лист параграфоф пользователя
-                usersList.get(indexOfuser).setListOfParagraphs(HttpModule.searchTextInWiki(messageFromLastUpdate));
+                usersList.get(indexOfuser).setListOfParagraphs(HttpModule.searchTextInWiki(usersList.get(indexOfuser).getLastSearchMessage()));
             }
         }
         else {
             // если апдейт это inlineQuery
             // инициализируем ранее объявленные переменные
             chatId = update.getCallbackQuery().getMessage().getChat().getId();
-            Integer userId = update.getCallbackQuery().getFrom().getId();
+
+            userId = update.getCallbackQuery().getFrom().getId();
+
             // если это inlineQuery, то пользователь уже известен. поэтому ищем его по id
             indexOfuser = searchIndexOfuserForWork(userId);
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
@@ -74,27 +79,24 @@ public class WikiBot extends TelegramLongPollingBot {
         // посылаем сообщение
         mySendMessage(chatId,textForReply);
     }
-
     public String getBotUsername() {
         return BotsSecretData.NAME_OF_BOT;
     }
-
     @Override
     public String getBotToken() {
         return BotsSecretData.TOKEN_OF_BOT;
     }
-
-
     // метод, которые ищет индекс пользователя среди известных пользователей бота
     public int searchIndexOfuserForWork(Integer userId){
         // объявляем индекс
-        int index = 0;
+        int index = 50;
         // идем по списку пользователей, известых боту
         for (int i = 0; i < usersList.size(); i++) {
             // если id известного пользователя совпадает с id пользователя из апдейта, то
-            if (userId == usersList.get(i).getUserId()){
+            if (usersList.get(i).getUserId().equals(userId)){
                 // сохраняем индекс
                 index = i;
+                break;
             }
         }
         // возвращаем индекс
@@ -102,7 +104,6 @@ public class WikiBot extends TelegramLongPollingBot {
     }
     // метод, который посылает сообщение в соответствующий чат с соотвтетсвующим сообщением и добавляем две кнопки
     public void mySendMessage(Long chatId, String messageForReply){
-
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(messageForReply);

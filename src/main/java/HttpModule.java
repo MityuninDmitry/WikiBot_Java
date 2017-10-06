@@ -10,12 +10,8 @@ import java.util.ArrayList;
 public class HttpModule {
 
     public static ArrayList<String> searchTextInWiki(String searchMessage){
-
         ArrayList<String> text = new ArrayList<String>(); // результирующий список
-
         Document doc; // объявляем документ
-
-
         try {
             // ищем статью в вики
             doc = Jsoup.connect("https://ru.wikipedia.org/wiki/" + searchMessage.trim()).get();
@@ -34,7 +30,6 @@ public class HttpModule {
             return text;
         }
         Element tags = doc.body().getElementById("content"); // считываем контент
-
         // удаляем лишнее с полученной страницы
         tags.getElementsByAttributeValue("id","toc").remove();
         tags.getElementsByAttributeValue("class","infobox").remove();
@@ -44,7 +39,6 @@ public class HttpModule {
         tags.getElementsByTag("sup").remove();
         tags.getElementsByTag("b").unwrap();
         tags.getElementsByTag("i").unwrap();
-
         // идем по всем оставшимся тегам
         for (Element tag: tags.getAllElements()){
             // если это параграф
@@ -62,10 +56,6 @@ public class HttpModule {
             if (result != null){ // если текст не пустой
                 text.add(result); // добавляем в список текст
             }
-
-        }
-        for (int i = 0; i < text.size(); i++) {
-            System.out.println(text.get(i));
         }
         return text;
     }
