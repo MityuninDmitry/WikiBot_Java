@@ -41,7 +41,6 @@ public class HttpModule {
         tags.getElementsByTag("i").unwrap();
         // идем по всем оставшимся тегам
         for (Element tag: tags.getAllElements()){
-            // если это параграф
             String result = null;
             // если тег p и в нем есть текст
             if (tag.tagName().equals("p") && tag.hasText() ){
@@ -50,11 +49,11 @@ public class HttpModule {
             }
             // если это список и он не пустой
             if (tag.tagName().equals("li") && tag.hasText()){
-                result = tag.text(); // выделяем текст
-                result = result.replaceAll("&nbsp;","").trim(); // избавляемся от лишнего в тексте
+                // удаляем корявые символы и обрезаем пробелы по краям
+                result = tag.text().replaceAll("&nbsp;","").trim(); // избавляемся от лишнего в тексте
             }
-            if (result != null){ // если текст не пустой
-                text.add(result); // добавляем в список текст
+            if (result != null){ // если кусок текста с вики не пустой, то
+                text.add(result); // добавляем в результирующий список
             }
         }
         return text;

@@ -17,17 +17,17 @@ public class WikiBot extends TelegramLongPollingBot {
         String textForReply;
         int indexOfuser;
         Integer userId;
+        String messageFromLastUpdate;
         // анализируем полученный апдейт
         // смотрим есть ли текст в этом сообщении или это колбэк запрос
         // если есть текст, то это сообщение от старого или нового пользователя
         if (!update.hasCallbackQuery()){
-            // инициализируем переменные, объявленные раннее
+            // получаем ИД чата и пользователя из апдейта
             chatId = update.getMessage().getChat().getId();
-
-            String messageFromLastUpdate = update.getMessage().getText();
-            // проверить новый это или старый пользователь
-            // получаем ИД пользователя из апдейта
             userId = update.getMessage().getFrom().getId();
+
+            // получаем последнее сообщение
+            messageFromLastUpdate = update.getMessage().getText();
 
             // смотрим изветнсый это пользователь или нет
             if (!User.isUserOld(userId)){
@@ -40,44 +40,27 @@ public class WikiBot extends TelegramLongPollingBot {
                 // сохранить ИД в список ИДов у класса пользователь
                 User.addId(userId);
             }
-            // индекс пользователя из массива известных пользователей
-            indexOfuser = searchIndexOfuserForWork(userId);
-            // если в обновлении есть документ или фото, то сохраняем соответствующее сообщение для пользователя
-            if (update.getMessage().hasDocument() || update.getMessage().hasPhoto()){
-                // устанавливаем последнее сообщение пользователя null
-                usersList.get(indexOfuser).setLastSearchMessage(null);
-                // текст статьи тоже null
-                usersList.get(indexOfuser).setListOfParagraphs(null);
-            }
-            // иначе
-            else {
-                // устанавливаем последнее сообщение пользователя
-                usersList.get(indexOfuser).setLastSearchMessage(messageFromLastUpdate);
-                // ищем в википедии текст статьи и сохраняем в лист параграфоф пользователя
-                usersList.get(indexOfuser).setListOfParagraphs(HttpModule.searchTextInWiki(usersList.get(indexOfuser).getLastSearchMessage()));
-            }
+
         }
         else {
-            // если апдейт это inlineQuery
-            // инициализируем ранее объявленные переменные
+            // если это CallbackQuery запрос
+            // получаем ИД чата и пользователя из апдейта
             chatId = update.getCallbackQuery().getMessage().getChat().getId();
-
             userId = update.getCallbackQuery().getFrom().getId();
 
-            // если это inlineQuery, то пользователь уже известен. поэтому ищем его по id
-            indexOfuser = searchIndexOfuserForWork(userId);
-            // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
-            if (update.getCallbackQuery().getData().equals("-->>")){
-                usersList.get(indexOfuser).incrementIndex();
-            }
-            else if (update.getCallbackQuery().getData().equals("<<--")){
-                usersList.get(indexOfuser).decrementIndex();
-            }
+            // получаем последнее сообщение
+            messageFromLastUpdate = update.getCallbackQuery().getData();
         }
+        // индекс пользователя из массива известных пользователей
+        indexOfuser = searchIndexOfuserForWork(userId);
+        // устанавливаем последнее сообщение пользователя
+        usersList.get(indexOfuser).setLastSearchMessageAndUpdateListOfParagraphs(messageFromLastUpdate);
         // собираем текст для отправки
         textForReply = usersList.get(indexOfuser).getMessageForReply();
+        // нужны ли кнопки под сообщением в ответе?
+        boolean isButtonNeed = usersList.get(indexOfuser).isButtonsNeed();
         // посылаем сообщение
-        mySendMessage(chatId,textForReply);
+        mySendMessage(chatId,textForReply, isButtonNeed);
     }
     public String getBotUsername() {
         return BotsSecretData.NAME_OF_BOT;
@@ -103,29 +86,32 @@ public class WikiBot extends TelegramLongPollingBot {
         return index;
     }
     // метод, который посылает сообщение в соответствующий чат с соотвтетсвующим сообщением и добавляем две кнопки
-    public void mySendMessage(Long chatId, String messageForReply){
+    public void mySendMessage(Long chatId, String messageForReply, boolean isButtonNeed){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(messageForReply);
 
-        // создаем клавиатуру из двух кнопок "назад" и "вперед"
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
-        List<InlineKeyboardButton> list = new ArrayList<InlineKeyboardButton>();
+        if (isButtonNeed){
+            // создаем клавиатуру из двух кнопок "назад" и "вперед"
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
+            List<InlineKeyboardButton> list = new ArrayList<InlineKeyboardButton>();
 
-        InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
-        inlineKeyboardButton.setText("<<--");
-        inlineKeyboardButton.setCallbackData("<<--");
-        InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-        inlineKeyboardButton2.setText("-->>");
-        inlineKeyboardButton2.setCallbackData("-->>");
+            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+            inlineKeyboardButton.setText("<<--");
+            inlineKeyboardButton.setCallbackData("<<--");
+            InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
+            inlineKeyboardButton2.setText("-->>");
+            inlineKeyboardButton2.setCallbackData("-->>");
 
-        list.add(inlineKeyboardButton);
-        list.add(inlineKeyboardButton2);
-        lists.add(list);
-        inlineKeyboardMarkup.setKeyboard(lists);
+            list.add(inlineKeyboardButton);
+            list.add(inlineKeyboardButton2);
+            lists.add(list);
+            inlineKeyboardMarkup.setKeyboard(lists);
 
-        message.setReplyMarkup(inlineKeyboardMarkup);
+            message.setReplyMarkup(inlineKeyboardMarkup);
+        }
+
 
         // посылаем сообщение
         try {
