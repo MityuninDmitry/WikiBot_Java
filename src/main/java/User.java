@@ -1,20 +1,79 @@
+import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
-public class User {
+public class User implements Serializable{
+    public static List<User> usersList = new ArrayList<User>();
     private static ArrayList<Integer> usersIdsList = new ArrayList<Integer>(); // список известных ИД пользователей
     private Integer UserId; // ИД пользователя
-    private Long lastChatId; // ИД пользователя
+    private Long lastChatId; // чат ИД пользователя
     private String lastSearchMessage; // последнее сообщение, которое он искал
     private int indexOfParagraph = 0; // номер параграфа
     private int indexOfRandomParagraph = 0; // номер параграфа
     private ArrayList<String> listOfParagraphs; // список параграфов
-    private ArrayList<String> listOfRandomParagraphs; // список параграфов
+    private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
     private boolean isButtonsNeed; // нужны кнопки при отправке сообщения поьзователю или нет
-    private Thread autoSendRandomMessage;
-    private WikiBot wikiBot;
+    private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
+    private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
     // конструктор
     public User(Integer userId) {
         UserId = userId;
+    }
+    // метод сохраняет список пользователей
+    public static void saveUsers(){
+        FileOutputStream fos;
+        ObjectOutputStream out;
+        try{
+            // создаем файлик для сохранения пользователей
+            File file = new File("src/main/resources/SavedUsers.dat");
+            // открываем потоки сохранения объекта
+            fos = new FileOutputStream(file);
+            out = new ObjectOutputStream(fos);
+            // сохраняем объекты
+            out.writeObject(usersList);
+            out.writeObject(usersIdsList);
+            // закрываем поток записи
+            out.close();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+    // метод загружает известных пользователей из файла
+    public static void loadUsers(){
+        FileInputStream fis = null;
+        ObjectInputStream in = null;
+        try {
+            fis = new FileInputStream("src/main/resources/SavedUsers.dat");
+            in = new ObjectInputStream(fis);
+            usersList = (ArrayList<User>) in.readObject();
+            usersIdsList = (ArrayList<Integer>) in.readObject();
+            in.close();
+            System.out.println("Users was loaded");
+        } catch (IOException e){
+            // e.printStackTrace();
+            System.out.println("There is no file for loading users. Or another error.");
+        } catch (ClassNotFoundException e){
+            e.printStackTrace();
+        }
+        for (int i = 0; i < usersList.size(); i++) {
+            usersList.get(i).activateNewTimerThread();
+        }
+    }
+    // метод возвращает пользователя из списка пользователей по его ИД
+    public static User getCurrentUserForWork(Integer userId){
+        // объявляем индекс
+        int index = 0;
+        // идем по списку пользователей, известых боту
+        for (int i = 0; i < usersList.size(); i++) {
+            // если id известного пользователя совпадает с id пользователя из апдейта, то
+            if (User.usersList.get(i).getUserId().equals(userId)){
+                // сохраняем индекс
+                index = i;
+                break;
+            }
+        }
+        // возвращаем индекс
+        return usersList.get(index);
     }
     public WikiBot getWikiBot() {
         return wikiBot;
@@ -28,6 +87,11 @@ public class User {
         // посылаем сообщение на запрос пользователя
         wikiBot.mySendMessage(getLastChatId(),getMessageForReply(), isButtonsNeed());
 
+        // запуск новой нити для автоматической отправки случайно статьи по истечении таймера
+        activateNewTimerThread();
+
+    }
+    public void activateNewTimerThread(){
         // если есть текущая запущенная нить, то прерываем ее
         if (autoSendRandomMessage != null){
             autoSendRandomMessage.interrupt();
@@ -36,7 +100,6 @@ public class User {
         AutoSendThread autoSendThread = new AutoSendThread(this);
         autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
     }
-
     public Long getLastChatId() {
         return lastChatId;
     }

@@ -8,13 +8,13 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import java.util.*;
 
 public class WikiBot extends TelegramLongPollingBot {
-    private List<User> usersList = new ArrayList<User>();
+
     public void onUpdateReceived(Update update) {
         // выводим апдейт в консоль
         System.out.println(update.toString());
         // заводим переменные чатИд и текст для ответа, индекс пользователя из списка пользователей
         Long chatId;
-        int indexOfuser;
+        User currentUser;
         Integer userId;
         String messageFromLastUpdate;
         // анализируем полученный апдейт
@@ -33,9 +33,10 @@ public class WikiBot extends TelegramLongPollingBot {
                 // пишем в консоль об этом
                 System.out.println("new user");
                 // сохранить его в список известных пользователей бота
-                usersList.add(newUser);
+                User.usersList.add(newUser);
                 // сохранить ИД в список ИДов у класса пользователь
                 User.addId(userId);
+
             }
         }
         else {
@@ -48,15 +49,17 @@ public class WikiBot extends TelegramLongPollingBot {
         }
 
 
-        // индекс пользователя из массива известных пользователей
-        indexOfuser = searchIndexOfuserForWork(userId);
+        // текущий пользователь из массива известных пользователей
+        currentUser = User.getCurrentUserForWork(userId);
         // устанавливаем пользователю последний чатИД
-        usersList.get(indexOfuser).setLastChatId(chatId);
+        currentUser.setLastChatId(chatId);
         // устанавливаем пользователю последний искомый текст и параграфы
-        usersList.get(indexOfuser).setLastSearchMessageAndUpdateListOfParagraphs(messageFromLastUpdate);
+        currentUser.setLastSearchMessageAndUpdateListOfParagraphs(messageFromLastUpdate);
         // передаем бота юзеру для отправки сообщения
-        usersList.get(indexOfuser).sendMessageBy(this);
-
+        currentUser.sendMessageBy(this);
+        // сохраняем пользователей в файл после каждого апдейта
+        // p.s не уверен, что это разумно, т.к если будет много апдейтов, то будет большая нагрузка
+        User.saveUsers();
 
     }
     public String getBotUsername() {
@@ -65,22 +68,6 @@ public class WikiBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken() {
         return BotsSecretData.TOKEN_OF_BOT;
-    }
-    // метод, которые ищет индекс пользователя среди известных пользователей бота
-    public int searchIndexOfuserForWork(Integer userId){
-        // объявляем индекс
-        int index = 50;
-        // идем по списку пользователей, известых боту
-        for (int i = 0; i < usersList.size(); i++) {
-            // если id известного пользователя совпадает с id пользователя из апдейта, то
-            if (usersList.get(i).getUserId().equals(userId)){
-                // сохраняем индекс
-                index = i;
-                break;
-            }
-        }
-        // возвращаем индекс
-        return index;
     }
     // метод, который посылает сообщение в соответствующий чат с соотвтетсвующим сообщением и добавляем две кнопки
     public void mySendMessage(Long chatId, String messageForReply, boolean isButtonNeed){

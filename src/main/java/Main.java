@@ -11,7 +11,10 @@ public class Main {
         // в этом блоке кода регистрируется наш вновь созданный бот
         WikiBot wikiBot = new WikiBot();
         try {
-            botsApi.registerBot(wikiBot);
+            System.out.println("Start bot"); // в консоль, что бот запущен
+            botsApi.registerBot(wikiBot); // запуск бота
+            User.loadUsers(); // грузим известных пользователей
+
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
