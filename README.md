@@ -10,8 +10,8 @@ Instruction:
 3. Then you can search new topic or click on the botton "next paragraph" for receiving next paragraph or you can see last paragraph again if you click "back paragraph"
 
 Also you can use these commands:
-/random - for searching random topic in wikipedia
-/help - for getting information about bot
+1. /random - for searching random topic in wikipedia
+2. /help - for getting information about bot
 
 Some features:
 1. Bot saves all last information. So, that's why after bot's restarting you can continue your work.
