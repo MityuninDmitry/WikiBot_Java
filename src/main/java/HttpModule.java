@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class HttpModule {
 
-    public static ArrayList<String> searchTextInWiki(String searchMessage){
+    public static ArrayList<String> searchTopicInWikiBy(String searchMessage){
         ArrayList<String> text = new ArrayList<String>(); // результирующий список
         Document doc; // объявляем документ
         try {
@@ -27,6 +27,55 @@ public class HttpModule {
         catch (IOException e) { // если любая другая ошибка
             e.printStackTrace();
             text.add("I am sorry, but it was something wrong with connection. Please, try again.");
+            return text;
+        }
+        Element tags = doc.body().getElementById("content"); // считываем контент
+        // удаляем лишнее с полученной страницы
+        tags.getElementsByAttributeValue("id","toc").remove();
+        tags.getElementsByAttributeValue("class","infobox").remove();
+        tags.getElementsByTag("a").unwrap();
+        tags.getElementsByTag("span").remove();
+        tags.getElementsByTag("table").remove();
+        tags.getElementsByTag("sup").remove();
+        tags.getElementsByTag("b").unwrap();
+        tags.getElementsByTag("i").unwrap();
+        // идем по всем оставшимся тегам
+        for (Element tag: tags.getAllElements()){
+            String result = null;
+            // если тег p и в нем есть текст
+            if (tag.tagName().equals("p") && tag.hasText() ){
+                // удаляем корявые символы и обрезаем пробелы по краям
+                result = tag.text().replaceAll("(&nbsp;)","").trim();
+            }
+            // если это список и он не пустой
+            if (tag.tagName().equals("li") && tag.hasText()){
+                // удаляем корявые символы и обрезаем пробелы по краям
+                result = tag.text().replaceAll("&nbsp;","").trim(); // избавляемся от лишнего в тексте
+            }
+            if (result != null){ // если кусок текста с вики не пустой, то
+                text.add(result); // добавляем в результирующий список
+            }
+        }
+        return text;
+    }
+    public static ArrayList<String> searchRandomTopicInWiki(){
+        ArrayList<String> text = new ArrayList<String>(); // результирующий список
+        Document doc; // объявляем документ
+        try {
+            // ищем статью в вики
+            doc = Jsoup.connect("https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
+
+        }
+        catch (HttpStatusException e) { // если 500, 404 ошибки, то
+            e.printStackTrace(); // печатаем трейс
+            // в результирующий лист добавляем текст
+
+            // выходим из метода
+            return text;
+        }
+        catch (IOException e) { // если любая другая ошибка
+            e.printStackTrace();
+
             return text;
         }
         Element tags = doc.body().getElementById("content"); // считываем контент

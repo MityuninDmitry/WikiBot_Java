@@ -14,7 +14,6 @@ public class WikiBot extends TelegramLongPollingBot {
         System.out.println(update.toString());
         // заводим переменные чатИд и текст для ответа, индекс пользователя из списка пользователей
         Long chatId;
-        String textForReply;
         int indexOfuser;
         Integer userId;
         String messageFromLastUpdate;
@@ -25,10 +24,8 @@ public class WikiBot extends TelegramLongPollingBot {
             // получаем ИД чата и пользователя из апдейта
             chatId = update.getMessage().getChat().getId();
             userId = update.getMessage().getFrom().getId();
-
-            // получаем последнее сообщение
+            // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getMessage().getText();
-
             // смотрим изветнсый это пользователь или нет
             if (!User.isUserOld(userId)){
                 // создать нового пользователя
@@ -40,27 +37,27 @@ public class WikiBot extends TelegramLongPollingBot {
                 // сохранить ИД в список ИДов у класса пользователь
                 User.addId(userId);
             }
-
         }
         else {
             // если это CallbackQuery запрос
             // получаем ИД чата и пользователя из апдейта
             chatId = update.getCallbackQuery().getMessage().getChat().getId();
             userId = update.getCallbackQuery().getFrom().getId();
-
-            // получаем последнее сообщение
+            // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getCallbackQuery().getData();
         }
+
+
         // индекс пользователя из массива известных пользователей
         indexOfuser = searchIndexOfuserForWork(userId);
-        // устанавливаем последнее сообщение пользователя
+        // устанавливаем пользователю последний чатИД
+        usersList.get(indexOfuser).setLastChatId(chatId);
+        // устанавливаем пользователю последний искомый текст и параграфы
         usersList.get(indexOfuser).setLastSearchMessageAndUpdateListOfParagraphs(messageFromLastUpdate);
-        // собираем текст для отправки
-        textForReply = usersList.get(indexOfuser).getMessageForReply();
-        // нужны ли кнопки под сообщением в ответе?
-        boolean isButtonNeed = usersList.get(indexOfuser).isButtonsNeed();
-        // посылаем сообщение
-        mySendMessage(chatId,textForReply, isButtonNeed);
+        // передаем бота юзеру для отправки сообщения
+        usersList.get(indexOfuser).sendMessageBy(this);
+
+
     }
     public String getBotUsername() {
         return BotsSecretData.NAME_OF_BOT;
@@ -90,7 +87,6 @@ public class WikiBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(messageForReply);
-
         if (isButtonNeed){
             // создаем клавиатуру из двух кнопок "назад" и "вперед"
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -111,8 +107,6 @@ public class WikiBot extends TelegramLongPollingBot {
 
             message.setReplyMarkup(inlineKeyboardMarkup);
         }
-
-
         // посылаем сообщение
         try {
             sendApiMethod(message);

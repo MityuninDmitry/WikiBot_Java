@@ -6,10 +6,8 @@ public class Main {
     public static void main(String[] args) {
         // инициализация контекста апи
         ApiContextInitializer.init();
-
         // создать объект взаимодействия нашего бота с апи телеграма
         TelegramBotsApi botsApi = new TelegramBotsApi();
-
         // в этом блоке кода регистрируется наш вновь созданный бот
         WikiBot wikiBot = new WikiBot();
         try {
@@ -17,7 +15,5 @@ public class Main {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-
-
     }
 }

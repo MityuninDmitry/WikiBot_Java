@@ -3,9 +3,47 @@ import java.util.ArrayList;
 public class User {
     private static ArrayList<Integer> usersIdsList = new ArrayList<Integer>(); // список известных ИД пользователей
     private Integer UserId; // ИД пользователя
+    private Long lastChatId; // ИД пользователя
     private String lastSearchMessage; // последнее сообщение, которое он искал
     private int indexOfParagraph = 0; // номер параграфа
+    private int indexOfRandomParagraph = 0; // номер параграфа
     private ArrayList<String> listOfParagraphs; // список параграфов
+    private ArrayList<String> listOfRandomParagraphs; // список параграфов
+    private boolean isButtonsNeed; // нужны кнопки при отправке сообщения поьзователю или нет
+    private Thread autoSendRandomMessage;
+    private WikiBot wikiBot;
+    // конструктор
+    public User(Integer userId) {
+        UserId = userId;
+    }
+    public WikiBot getWikiBot() {
+        return wikiBot;
+    }
+    // метод посылает сообщение пользователю с помощью бота
+    public void sendMessageBy(WikiBot wikiBot){
+        // если вики бот еще не был проинициализирован у пользователя, то проинициализировать
+        if (this.wikiBot == null){
+            this.wikiBot = wikiBot;
+        }
+        // посылаем сообщение на запрос пользователя
+        wikiBot.mySendMessage(getLastChatId(),getMessageForReply(), isButtonsNeed());
+
+        // если есть текущая запущенная нить, то прерываем ее
+        if (autoSendRandomMessage != null){
+            autoSendRandomMessage.interrupt();
+        }
+        // создаем и запускаем новую нить отправки автоматического сообщения
+        AutoSendThread autoSendThread = new AutoSendThread(this);
+        autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
+    }
+
+    public Long getLastChatId() {
+        return lastChatId;
+    }
+
+    public void setLastChatId(Long lastChatId) {
+        this.lastChatId = lastChatId;
+    }
 
     public boolean isButtonsNeed() {
         return isButtonsNeed;
@@ -15,12 +53,7 @@ public class User {
         isButtonsNeed = buttonsNeed;
     }
 
-    private boolean isButtonsNeed;
 
-    // конструктор
-    public User(Integer userId) {
-        UserId = userId;
-    }
     // метод проверяет известный это пользователь или нет
     public static boolean isUserOld(Integer userId){
         if (usersIdsList.contains(userId)){
@@ -66,6 +99,18 @@ public class User {
             return listOfParagraphs.get(indexOfParagraph);
         }
     }
+    public ArrayList<String> getListOfRandomParagraphs() {
+        return listOfRandomParagraphs;
+    }
+    public void setListOfRandomParagraphs(ArrayList<String> listOfParagraphs) {
+        indexOfRandomParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
+        this.listOfRandomParagraphs = listOfParagraphs;
+        if (listOfRandomParagraphs != null && listOfRandomParagraphs.size() >= 1){
+            this.listOfRandomParagraphs.add(0,"Hello again. You didn't search anyhting long time ago.\n" +
+                    "That's why i found random topic in Wikipedia. I hope it will be interesting for you:\n\n");
+        }
+
+    }
     public ArrayList<String> getListOfParagraphs() {
         return listOfParagraphs;
     }
@@ -89,9 +134,19 @@ public class User {
             text.add("Hello. I am WikiBot. Nice to meet you.\n" +
                     "If you want to search something in WikiPedia, tell me.\n" +
                     "I will try to find it for you.\n" +
-                    "For example, type 'Tesla'");
+                    "For example, type 'Tesla'\n" +
+                    "Also you can type:\n" +
+                    "/random for searching random topic\n" +
+                    "/help for seeing this instruction");
             setListOfParagraphs(text);
             setButtonsNeed(false);
+        }
+        else if (lastSearchMessage.equals("/random")){
+            // случай, когда пользователь послал картинку или документ
+            this.lastSearchMessage = null;
+
+            setListOfParagraphs(HttpModule.searchRandomTopicInWiki()); // список параграфов обнуляем
+            setButtonsNeed(true);
         }
         else if (lastSearchMessage.equals("")){
             // случай, когда пользователь послал картинку или документ
@@ -110,7 +165,7 @@ public class User {
         else {
             // если сообщение ок, то ищем по этому сообщению статью в вики
             this.lastSearchMessage = lastSearchMessage;
-            setListOfParagraphs(HttpModule.searchTextInWiki(this.lastSearchMessage));
+            setListOfParagraphs(HttpModule.searchTopicInWikiBy(this.lastSearchMessage));
             // если список параграфов состоит из 1 элемента, то нет смысла выводить кнопки
             if (getListOfParagraphs().size() == 1){
                 setButtonsNeed(false);
