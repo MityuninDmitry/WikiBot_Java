@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class User implements Serializable{
     public static List<User> usersList = new ArrayList<User>();
@@ -13,8 +14,24 @@ public class User implements Serializable{
     private ArrayList<String> listOfParagraphs; // список параграфов
     private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
     private boolean isButtonsNeed; // нужны кнопки при отправке сообщения поьзователю или нет
+    private Map<String, String> toc;
+    private ArrayList<String> listOfCases = new ArrayList<String>();
+    private boolean isNeedShowToc;
     private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
     private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
+    public void setIsFirstMessageToUser(boolean isFirstMessageToUser){
+        if (toc != null)
+            this.isNeedShowToc = isFirstMessageToUser;
+    }
+    public boolean isNeedShowToc(){
+        return isNeedShowToc;
+    }
+    public void setWikiBot(WikiBot wikiBot){
+        // если вики бот еще не был проинициализирован у пользователя, то проинициализировать
+        if (this.wikiBot == null){
+            this.wikiBot = wikiBot;
+        }
+    }
     // конструктор
     public User(Integer userId) {
         UserId = userId;
@@ -40,8 +57,8 @@ public class User implements Serializable{
     }
     // метод загружает известных пользователей из файла
     public static void loadUsers(){
-        FileInputStream fis = null;
-        ObjectInputStream in = null;
+        FileInputStream fis;
+        ObjectInputStream in;
         try {
             fis = new FileInputStream("src/main/resources/SavedUsers.dat");
             in = new ObjectInputStream(fis);
@@ -79,16 +96,13 @@ public class User implements Serializable{
         return wikiBot;
     }
     // метод посылает сообщение пользователю с помощью бота
-    public void sendMessageBy(WikiBot wikiBot){
-        // если вики бот еще не был проинициализирован у пользователя, то проинициализировать
-        if (this.wikiBot == null){
-            this.wikiBot = wikiBot;
-        }
-        // посылаем сообщение на запрос пользователя
-        wikiBot.mySendMessage(getLastChatId(),getMessageForReply(), isButtonsNeed());
+    public void sendMessageBy(){
 
-        // запуск новой нити для автоматической отправки случайно статьи по истечении таймера
-        activateNewTimerThread();
+        // посылаем сообщение на запрос пользователя
+        //wikiBot.mySendMessage(getLastChatId(),getMessageForReply(), isButtonsNeed());
+        wikiBot.mySendTocMessage(getLastChatId(),toc);
+
+
 
     }
     public void activateNewTimerThread(){
@@ -103,28 +117,18 @@ public class User implements Serializable{
     public Long getLastChatId() {
         return lastChatId;
     }
-
     public void setLastChatId(Long lastChatId) {
         this.lastChatId = lastChatId;
     }
-
     public boolean isButtonsNeed() {
         return isButtonsNeed;
     }
-
     public void setButtonsNeed(boolean buttonsNeed) {
         isButtonsNeed = buttonsNeed;
     }
-
-
     // метод проверяет известный это пользователь или нет
     public static boolean isUserOld(Integer userId){
-        if (usersIdsList.contains(userId)){
-            return true;
-        }
-        else {
-            return false;
-        }
+        return usersIdsList.contains(userId);
     }
     // добавить ИД в список известных пользователей
     public static void addId(Integer id){
@@ -132,6 +136,14 @@ public class User implements Serializable{
     }
     public int getIndexOfParagraph(){
         return indexOfParagraph;
+    }
+    public void setIndexOfParagraph(int indexOfParagraph){
+        if (indexOfParagraph > getListOfParagraphs().size()){
+            this.indexOfParagraph = getListOfParagraphs().size() - 1;
+        }
+        else {
+            this.indexOfParagraph = indexOfParagraph;
+        }
     }
     public void incrementIndex(){
         // если список параграфов пустой, то индекс всегда ноль
@@ -148,6 +160,7 @@ public class User implements Serializable{
         // если список параграфов пустой или индекс стал меньше 0, то обнуляем его
         if (listOfParagraphs == null){
             setButtonsNeed(false);
+
         }
         if (indexOfParagraph <= 0) indexOfParagraph = 0;
         else // иначе уменьшаем индекс
@@ -181,13 +194,12 @@ public class User implements Serializable{
         indexOfParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
         this.listOfParagraphs = listOfParagraphs;
     }
-
     public String getLastSearchMessage() {
         return lastSearchMessage;
     }
     // при установке нового последнего сообщения пользователя, сразу же обнволяем список параграфов для вывода
     public void setLastSearchMessageAndUpdateListOfParagraphs(String lastSearchMessage) {
-
+        setIsFirstMessageToUser(false);
         // если сообщение null, то пользователь послал документ или картинку
         if (lastSearchMessage == null) lastSearchMessage = "";
         // если пользователь ввел старт или помощь, то соответствующее сообщение
@@ -197,39 +209,51 @@ public class User implements Serializable{
             text.add("Hello. I am WikiBot. Nice to meet you.\n" +
                     "If you want to search something in WikiPedia, tell me.\n" +
                     "I will try to find it for you.\n" +
-                    "For example, type 'Tesla'\n" +
+                    "For example, type 'Tesla'.\n" +
                     "Also you can type:\n" +
                     "/random for searching random topic\n" +
                     "/help for seeing this instruction");
             setListOfParagraphs(text);
             setButtonsNeed(false);
+
         }
         else if (lastSearchMessage.equals("/random")){
             // случай, когда пользователь послал картинку или документ
             this.lastSearchMessage = null;
+            HttpModule httpModule = new HttpModule();
 
-            setListOfParagraphs(HttpModule.searchRandomTopicInWiki()); // список параграфов обнуляем
+            setListOfParagraphs(httpModule.searchRandomTopicInWikiWithToc()); // список параграфов обнуляем
+            toc = httpModule.getTocList();
+
             setButtonsNeed(true);
+            setIsFirstMessageToUser(true);
+
+            for (Map.Entry<String,String> toc_item: toc.entrySet()){
+                listOfCases.add(toc_item.getValue());
+            }
         }
         else if (lastSearchMessage.equals("")){
             // случай, когда пользователь послал картинку или документ
             this.lastSearchMessage = null;
             setListOfParagraphs(null); // список параграфов обнуляем
             setButtonsNeed(false);
+
         }
         else if (lastSearchMessage.equals("-->>")){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             incrementIndex();
+            setIsFirstMessageToUser(false);
         }
         else if (lastSearchMessage.equals("<<--")){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             decrementIndex();
+
+
         }
-        else {
-            // если сообщение ок, то ищем по этому сообщению статью в вики
-            this.lastSearchMessage = lastSearchMessage;
-            setListOfParagraphs(HttpModule.searchTopicInWikiBy(this.lastSearchMessage));
-            // если список параграфов состоит из 1 элемента, то нет смысла выводить кнопки
+        else if (listOfCases.contains(lastSearchMessage)){
+
+            setIndexOfParagraph(Integer.parseInt(lastSearchMessage));
+
             if (getListOfParagraphs().size() == 1){
                 setButtonsNeed(false);
             } else {
@@ -237,6 +261,30 @@ public class User implements Serializable{
             }
 
         }
+        else {
+            // если новое сообщение ок, то ищем по этому сообщению статью в вики
+            this.lastSearchMessage = lastSearchMessage;
+
+            HttpModule httpModule = new HttpModule();
+
+            setListOfParagraphs(httpModule.searchTopicInWikiWithToc(this.lastSearchMessage));
+            toc = httpModule.getTocList();
+
+            setIsFirstMessageToUser(true);
+            // если список параграфов состоит из 1 элемента, то нет смысла выводить кнопки
+            for (Map.Entry<String,String> toc_item: toc.entrySet()){
+                listOfCases.add(toc_item.getValue());
+            }
+
+        }
+        // в зависимости от того, первое это сообщение или нет, то послыаем либо меню, либо текст
+        if (isNeedShowToc()){
+            wikiBot.mySendTocMessage(getLastChatId(),toc);
+        } else {
+            wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),isButtonsNeed);
+        }
+        // запуск новой нити для автоматической отправки случайно статьи по истечении таймера
+        activateNewTimerThread();
     }
     public Integer getUserId() {
         return UserId;

@@ -53,10 +53,12 @@ public class WikiBot extends TelegramLongPollingBot {
         currentUser = User.getCurrentUserForWork(userId);
         // устанавливаем пользователю последний чатИД
         currentUser.setLastChatId(chatId);
+        //
+        currentUser.setWikiBot(this);
         // устанавливаем пользователю последний искомый текст и параграфы
         currentUser.setLastSearchMessageAndUpdateListOfParagraphs(messageFromLastUpdate);
         // передаем бота юзеру для отправки сообщения
-        currentUser.sendMessageBy(this);
+
         // сохраняем пользователей в файл после каждого апдейта
         // p.s не уверен, что это разумно, т.к если будет много апдейтов, то будет большая нагрузка
         User.saveUsers();
@@ -94,6 +96,35 @@ public class WikiBot extends TelegramLongPollingBot {
 
             message.setReplyMarkup(inlineKeyboardMarkup);
         }
+        // посылаем сообщение
+        try {
+            sendApiMethod(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+    public void mySendTocMessage(Long chatId, Map<String, String> toc){
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Choose item for continue watch topic:");
+
+        // создаем клавиатуру из содержания
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
+        List<InlineKeyboardButton> list;
+        for (Map.Entry<String,String> toc_item: toc.entrySet()){
+            list = new ArrayList<InlineKeyboardButton>();
+            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+            inlineKeyboardButton.setText(toc_item.getKey());
+            inlineKeyboardButton.setCallbackData(toc_item.getValue());
+            list.add(inlineKeyboardButton);
+            lists.add(list);
+        }
+
+        inlineKeyboardMarkup.setKeyboard(lists);
+
+        message.setReplyMarkup(inlineKeyboardMarkup);
+
         // посылаем сообщение
         try {
             sendApiMethod(message);
