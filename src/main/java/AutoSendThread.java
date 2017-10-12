@@ -16,7 +16,14 @@ public class AutoSendThread implements Runnable {
             int seconds = 60;
             Thread.sleep( hours * minutes * seconds * 1000);
             // ищем случаную статью и устанавливаем ее пользователю
-            user.setListOfRandomParagraphs(HttpModule.searchRandomTopicInWiki());
+            HttpModule httpModule = new HttpModule();
+            user.setListOfRandomParagraphs(httpModule.searchTopicInWikiWithToc("/random"));
+            user.setTopic_random_name(httpModule.getTOPIC_NAME());
+            user.getListOfRandomParagraphs().add(0,"Привет.\n" +
+                    "Ты очень давно ничего не искал в Википедии.\n" +
+                    "Поэтому я взял на себя смелость и нашел случайную статью: " + user.getTopic_random_name() + ".\n" +
+                    "Вот отрывок из нее:\n\n");
+
             // посылаем сообщение пользователю
             if (user.getListOfRandomParagraphs() != null && user.getListOfRandomParagraphs().size() > 1){
                 String textForReply = user.getListOfRandomParagraphs().get(0) +
@@ -24,6 +31,7 @@ public class AutoSendThread implements Runnable {
                 user.getWikiBot().mySendMessage(user.getLastChatId(),textForReply,false);
             }
             System.out.println(String.format("Timer thread %s was ended",Thread.currentThread().getName())); // выводим в консоль
+            user.activateNewTimerThread();
         } catch (InterruptedException e) {
             System.out.println(String.format("Timer thread %s was interrupted",Thread.currentThread().getName())); // выводим в консоль
         }

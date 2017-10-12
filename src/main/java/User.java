@@ -10,18 +10,39 @@ public class User implements Serializable{
     private Long lastChatId; // чат ИД пользователя
     private String lastSearchMessage; // последнее сообщение, которое он искал
     private int indexOfParagraph = 0; // номер параграфа
-    private int indexOfRandomParagraph = 0; // номер параграфа
     private ArrayList<String> listOfParagraphs; // список параграфов
     private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
     private boolean isButtonsNeed; // нужны кнопки при отправке сообщения поьзователю или нет
-    private Map<String, String> toc;
+    private Map<String, String> toc; // меню статьи
     private ArrayList<String> listOfCases = new ArrayList<String>();
-    private boolean isNeedShowToc;
+    private String topic_name; // название статьи в Википедии
+    private String topic_random_name; // название случайной статьи в Википедии(задается в отдельной нити)
+    private boolean isNeedShowToc; // надо ли показывать меню
     private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
     private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
-    public void setIsFirstMessageToUser(boolean isFirstMessageToUser){
+    public void setTopic_name(String TOPIC_NAME){
+        topic_name = TOPIC_NAME;
+    }
+    public String getTopic_name(){
+        return topic_name;
+    }
+    public void setTopic_random_name(String TOPIC_NAME){
+        topic_random_name = TOPIC_NAME;
+    }
+    public String getTopic_random_name(){
+        return topic_random_name;
+    }
+    public void setToc(Map<String, String> toc){
+        this.toc = toc;
+        if (this.toc == null || this.toc.size() == 1) {
+            setNeedToShowToc(false);
+        } else {
+            setNeedToShowToc(true);
+        }
+    }
+    public void setNeedToShowToc(boolean needToShowToc){
         if (toc != null)
-            this.isNeedShowToc = isFirstMessageToUser;
+            this.isNeedShowToc = needToShowToc;
     }
     public boolean isNeedShowToc(){
         return isNeedShowToc;
@@ -96,15 +117,6 @@ public class User implements Serializable{
         return wikiBot;
     }
     // метод посылает сообщение пользователю с помощью бота
-    public void sendMessageBy(){
-
-        // посылаем сообщение на запрос пользователя
-        //wikiBot.mySendMessage(getLastChatId(),getMessageForReply(), isButtonsNeed());
-        wikiBot.mySendTocMessage(getLastChatId(),toc);
-
-
-
-    }
     public void activateNewTimerThread(){
         // если есть текущая запущенная нить, то прерываем ее
         if (autoSendRandomMessage != null){
@@ -113,6 +125,7 @@ public class User implements Serializable{
         // создаем и запускаем новую нить отправки автоматического сообщения
         AutoSendThread autoSendThread = new AutoSendThread(this);
         autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
+
     }
     public Long getLastChatId() {
         return lastChatId;
@@ -169,7 +182,9 @@ public class User implements Serializable{
     public String getMessageForReply(){
         // если список параграфов пустой(не ссылается ни на какой список), то возвращаем соответствующее сообщение
         if (listOfParagraphs == null){
-            return "There is no text for you. Try to find something else.";
+            setButtonsNeed(false);
+            return "У меня не получилось найти что-либо по этому запросу.";
+
             // иначе возвращаем соответствубщий параграф
         } else  {
             return listOfParagraphs.get(indexOfParagraph);
@@ -179,13 +194,7 @@ public class User implements Serializable{
         return listOfRandomParagraphs;
     }
     public void setListOfRandomParagraphs(ArrayList<String> listOfParagraphs) {
-        indexOfRandomParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
         this.listOfRandomParagraphs = listOfParagraphs;
-        if (listOfRandomParagraphs != null && listOfRandomParagraphs.size() >= 1){
-            this.listOfRandomParagraphs.add(0,"Hello again. You didn't search anyhting long time ago.\n" +
-                    "That's why i found random topic in Wikipedia. I hope it will be interesting for you:\n\n");
-        }
-
     }
     public ArrayList<String> getListOfParagraphs() {
         return listOfParagraphs;
@@ -193,40 +202,44 @@ public class User implements Serializable{
     public void setListOfParagraphs(ArrayList<String> listOfParagraphs) {
         indexOfParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
         this.listOfParagraphs = listOfParagraphs;
+        if (this.listOfParagraphs == null || this.listOfParagraphs.size() <= 1){
+            setButtonsNeed(false);
+        } else {
+            setButtonsNeed(true);
+        }
     }
     public String getLastSearchMessage() {
         return lastSearchMessage;
     }
     // при установке нового последнего сообщения пользователя, сразу же обнволяем список параграфов для вывода
     public void setLastSearchMessageAndUpdateListOfParagraphs(String lastSearchMessage) {
-        setIsFirstMessageToUser(false);
+        setNeedToShowToc(false);
         // если сообщение null, то пользователь послал документ или картинку
         if (lastSearchMessage == null) lastSearchMessage = "";
         // если пользователь ввел старт или помощь, то соответствующее сообщение
         if (lastSearchMessage.equals("/start") || lastSearchMessage.equals("/help")){
             this.lastSearchMessage = null;
             ArrayList<String> text = new ArrayList<String>();
-            text.add("Hello. I am WikiBot. Nice to meet you.\n" +
-                    "If you want to search something in WikiPedia, tell me.\n" +
-                    "I will try to find it for you.\n" +
-                    "For example, type 'Tesla'.\n" +
-                    "Also you can type:\n" +
-                    "/random for searching random topic\n" +
-                    "/help for seeing this instruction");
+            text.add("Привет. Меня зовут WikiBot. Приятно познакомиться.\n" +
+                    "Если ты хочешь найти что-то в WikiPedia, скажи мне.\n" +
+                    "Я попробую найти это для тебя.\n" +
+                    "Например, введи слово Tesla.\n" +
+                    "Также ты можешь ввести:\n" +
+                    "/random для поиска случайной статьи\n" +
+                    "/help для просмотра справочной информации");
             setListOfParagraphs(text);
-            setButtonsNeed(false);
 
         }
         else if (lastSearchMessage.equals("/random")){
-            // случай, когда пользователь послал картинку или документ
+            // случай, когда пользователь нажал показать случайную статью
             this.lastSearchMessage = null;
             HttpModule httpModule = new HttpModule();
 
-            setListOfParagraphs(httpModule.searchRandomTopicInWikiWithToc()); // список параграфов обнуляем
-            toc = httpModule.getTocList();
+            setListOfParagraphs(httpModule.searchTopicInWikiWithToc("/random"));
 
-            setButtonsNeed(true);
-            setIsFirstMessageToUser(true);
+            setToc(httpModule.getTocList());
+            setTopic_name(httpModule.getTOPIC_NAME());
+
 
             for (Map.Entry<String,String> toc_item: toc.entrySet()){
                 listOfCases.add(toc_item.getValue());
@@ -236,13 +249,13 @@ public class User implements Serializable{
             // случай, когда пользователь послал картинку или документ
             this.lastSearchMessage = null;
             setListOfParagraphs(null); // список параграфов обнуляем
-            setButtonsNeed(false);
+
 
         }
         else if (lastSearchMessage.equals("-->>")){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             incrementIndex();
-            setIsFirstMessageToUser(false);
+
         }
         else if (lastSearchMessage.equals("<<--")){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
@@ -250,28 +263,26 @@ public class User implements Serializable{
 
 
         }
-        else if (listOfCases.contains(lastSearchMessage)){
+        else if (listOfCases.contains(lastSearchMessage)){ // если страница меню совпадает с текущей менюшкой
 
             setIndexOfParagraph(Integer.parseInt(lastSearchMessage));
-
-            if (getListOfParagraphs().size() == 1){
-                setButtonsNeed(false);
-            } else {
-                setButtonsNeed(true);
-            }
 
         }
         else {
             // если новое сообщение ок, то ищем по этому сообщению статью в вики
             this.lastSearchMessage = lastSearchMessage;
 
+            // инициализируем http модуль для отпавки запросов
             HttpModule httpModule = new HttpModule();
 
+            // ищем новые параграфы
             setListOfParagraphs(httpModule.searchTopicInWikiWithToc(this.lastSearchMessage));
-            toc = httpModule.getTocList();
+            // устанавливаем меню
+            setToc(httpModule.getTocList());
+            setTopic_name(httpModule.getTOPIC_NAME());
+            // надо показывать меню?
 
-            setIsFirstMessageToUser(true);
-            // если список параграфов состоит из 1 элемента, то нет смысла выводить кнопки
+
             for (Map.Entry<String,String> toc_item: toc.entrySet()){
                 listOfCases.add(toc_item.getValue());
             }
@@ -279,7 +290,7 @@ public class User implements Serializable{
         }
         // в зависимости от того, первое это сообщение или нет, то послыаем либо меню, либо текст
         if (isNeedShowToc()){
-            wikiBot.mySendTocMessage(getLastChatId(),toc);
+            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name());
         } else {
             wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),isButtonsNeed);
         }

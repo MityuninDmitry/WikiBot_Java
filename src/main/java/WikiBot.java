@@ -47,17 +47,14 @@ public class WikiBot extends TelegramLongPollingBot {
             // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getCallbackQuery().getData();
         }
-
-
         // текущий пользователь из массива известных пользователей
         currentUser = User.getCurrentUserForWork(userId);
         // устанавливаем пользователю последний чатИД
         currentUser.setLastChatId(chatId);
-        //
+        // передаем пользователю бота для отправки сообщений
         currentUser.setWikiBot(this);
         // устанавливаем пользователю последний искомый текст и параграфы
         currentUser.setLastSearchMessageAndUpdateListOfParagraphs(messageFromLastUpdate);
-        // передаем бота юзеру для отправки сообщения
 
         // сохраняем пользователей в файл после каждого апдейта
         // p.s не уверен, что это разумно, т.к если будет много апдейтов, то будет большая нагрузка
@@ -103,10 +100,13 @@ public class WikiBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-    public void mySendTocMessage(Long chatId, Map<String, String> toc){
+    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("Choose item for continue watch topic:");
+
+        message.setText(String.format("Материал из Википедии — свободной энциклопедии\n" +
+                "Тема поиска: %s.\n" +
+                "Выберите пункт меню для просмотра информации:",topicName.toUpperCase()));
 
         // создаем клавиатуру из содержания
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
