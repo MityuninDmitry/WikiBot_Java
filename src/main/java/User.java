@@ -219,8 +219,9 @@ public class User implements Serializable{
         // если пользователь ввел старт или помощь, то соответствующее сообщение
         if (lastSearchMessage.equals("/start") || lastSearchMessage.equals("/help")){
             this.lastSearchMessage = null;
+            setToc(null);
             ArrayList<String> text = new ArrayList<String>();
-            text.add("Привет. Меня зовут WikiBot. Приятно познакомиться.\n" +
+            text.add("Привет. Меня зовут WikiBot.\n" +
                     "Если ты хочешь найти что-то в WikiPedia, скажи мне.\n" +
                     "Я попробую найти это для тебя.\n" +
                     "Например, введи слово Tesla.\n" +
@@ -263,6 +264,14 @@ public class User implements Serializable{
 
 
         }
+        else if (lastSearchMessage.equals("/showMenu")){
+            setNeedToShowToc(true);
+        }
+        else if (lastSearchMessage.equals("/image")){
+            ArrayList<String> image = new ArrayList<String>();
+            image.add("https://c1.staticflickr.com/7/6107/6381966401_032df5fe1e_b.jpg");
+            setListOfParagraphs(image);
+        }
         else if (listOfCases.contains(lastSearchMessage)){ // если страница меню совпадает с текущей менюшкой
 
             setIndexOfParagraph(Integer.parseInt(lastSearchMessage));
@@ -288,13 +297,13 @@ public class User implements Serializable{
             }
 
         }
-        // в зависимости от того, первое это сообщение или нет, то послыаем либо меню, либо текст
+        // если надо показать меню, то показываем меню. иначе отправляем сообщение
         if (isNeedShowToc()){
             wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name());
         } else {
             wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),isButtonsNeed);
         }
-        // запуск новой нити для автоматической отправки случайно статьи по истечении таймера
+        // запуск новой нити для автоматической отправки случайной статьи по истечении таймера
         activateNewTimerThread();
     }
     public Integer getUserId() {

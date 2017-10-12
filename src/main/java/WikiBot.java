@@ -1,7 +1,12 @@
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
@@ -74,21 +79,54 @@ public class WikiBot extends TelegramLongPollingBot {
         message.setChatId(chatId);
         message.setText(messageForReply);
         if (isButtonNeed){
+            /*
+            ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+            List<KeyboardRow> keyboard = new ArrayList<KeyboardRow>();
+            KeyboardRow row = new KeyboardRow();
+            row.add("⬅️ Назад");
+            row.add("Вперед ➡️");
+            keyboard.add(row);
+            row = new KeyboardRow();
+            row.add("ℹ️ Помощь");
+            row.add("\uD83D\uDCD7 Показать меню");
+            keyboard.add(row);
+            keyboardMarkup.setKeyboard(keyboard);
+            // Add it to the message
+            message.setReplyMarkup(keyboardMarkup);
+            */
+
+
             // создаем клавиатуру из двух кнопок "назад" и "вперед"
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
-            List<InlineKeyboardButton> list = new ArrayList<InlineKeyboardButton>();
+            List<InlineKeyboardButton> listNavigation = new ArrayList<InlineKeyboardButton>();
+            List<InlineKeyboardButton> listMenu = new ArrayList<InlineKeyboardButton>();
 
             InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
-            inlineKeyboardButton.setText("<<--");
+            inlineKeyboardButton.setText("⬅️ Назад");
             inlineKeyboardButton.setCallbackData("<<--");
             InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-            inlineKeyboardButton2.setText("-->>");
+            inlineKeyboardButton2.setText("Вперед ➡️");
             inlineKeyboardButton2.setCallbackData("-->>");
 
-            list.add(inlineKeyboardButton);
-            list.add(inlineKeyboardButton2);
-            lists.add(list);
+            listNavigation.add(inlineKeyboardButton);
+            listNavigation.add(inlineKeyboardButton2);
+
+            InlineKeyboardButton buttonHelp = new InlineKeyboardButton();
+            buttonHelp.setText("ℹ️ Помощь");
+            buttonHelp.setCallbackData("/help");
+
+            InlineKeyboardButton buttonMenu = new InlineKeyboardButton();
+            buttonMenu.setText("\uD83D\uDCD7 Показать меню");
+            buttonMenu.setCallbackData("/showMenu");
+
+            listMenu.add(buttonHelp);
+            listMenu.add(buttonMenu);
+
+            lists.add(listMenu);
+            lists.add(listNavigation);
+
+
             inlineKeyboardMarkup.setKeyboard(lists);
 
             message.setReplyMarkup(inlineKeyboardMarkup);
