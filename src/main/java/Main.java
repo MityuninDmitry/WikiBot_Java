@@ -15,6 +15,8 @@ public class Main {
             botsApi.registerBot(wikiBot); // запуск бота
             User.loadUsers(); // грузим известных пользователей
 
+             HttpModule httpModule = new HttpModule();
+             httpModule.searchQuotesInWikiWithToc("Начало");
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

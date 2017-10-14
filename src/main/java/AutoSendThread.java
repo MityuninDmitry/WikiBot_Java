@@ -28,7 +28,7 @@ public class AutoSendThread implements Runnable {
             if (user.getListOfRandomParagraphs() != null && user.getListOfRandomParagraphs().size() > 1){
                 String textForReply = user.getListOfRandomParagraphs().get(0) +
                         user.getListOfRandomParagraphs().get(1);
-                user.getWikiBot().mySendMessage(user.getLastChatId(),textForReply,false);
+                user.getWikiBot().mySendMessage(user.getLastChatId(),textForReply, BUTTONS_MODE.NONE);
             }
             System.out.println(String.format("Timer thread %s was ended",Thread.currentThread().getName())); // выводим в консоль
             user.activateNewTimerThread();

@@ -12,14 +12,18 @@ public class User implements Serializable{
     private int indexOfParagraph = 0; // номер параграфа
     private ArrayList<String> listOfParagraphs; // список параграфов
     private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
-    private boolean isButtonsNeed; // нужны кнопки при отправке сообщения поьзователю или нет
+    private String modeOfButtons; // нужны кнопки при отправке сообщения поьзователю или нет
     private Map<String, String> toc; // меню статьи
     private ArrayList<String> listOfCases = new ArrayList<String>();
     private String topic_name; // название статьи в Википедии
     private String topic_random_name; // название случайной статьи в Википедии(задается в отдельной нити)
     private boolean isNeedShowToc; // надо ли показывать меню
+    private boolean isTopicsMode = true; // true - Topics, false - Quotes
     private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
     private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
+    public void setTopicsMode(boolean isTopicsMode){
+        this.isTopicsMode = isTopicsMode;
+    }
     public void setTopic_name(String TOPIC_NAME){
         topic_name = TOPIC_NAME;
     }
@@ -38,7 +42,11 @@ public class User implements Serializable{
             setNeedToShowToc(false);
         } else {
             setNeedToShowToc(true);
+            for (Map.Entry<String,String> toc_item: this.toc.entrySet()){
+                listOfCases.add(toc_item.getValue());
+            }
         }
+
     }
     public void setNeedToShowToc(boolean needToShowToc){
         if (toc != null)
@@ -133,11 +141,11 @@ public class User implements Serializable{
     public void setLastChatId(Long lastChatId) {
         this.lastChatId = lastChatId;
     }
-    public boolean isButtonsNeed() {
-        return isButtonsNeed;
+    public String getModeButtons() {
+        return modeOfButtons;
     }
-    public void setButtonsNeed(boolean buttonsNeed) {
-        isButtonsNeed = buttonsNeed;
+    public void setButtonsMode(String modeOfButtons) {
+        this.modeOfButtons = modeOfButtons;
     }
     // метод проверяет известный это пользователь или нет
     public static boolean isUserOld(Integer userId){
@@ -162,18 +170,20 @@ public class User implements Serializable{
         // если список параграфов пустой, то индекс всегда ноль
         if (listOfParagraphs == null ) {
             indexOfParagraph = 0;
-            setButtonsNeed(false);
+            setButtonsMode(BUTTONS_MODE.NONE);
         }
         else // иначе если еще не достигли предела списка параграфов, то увеличиваем индекс
             if (indexOfParagraph < listOfParagraphs.size() - 1) {
                 indexOfParagraph++;
             }
+            else {
+                indexOfParagraph = listOfParagraphs.size() - 1;
+            }
     }
     public void decrementIndex(){
         // если список параграфов пустой или индекс стал меньше 0, то обнуляем его
         if (listOfParagraphs == null){
-            setButtonsNeed(false);
-
+            setButtonsMode(BUTTONS_MODE.NONE);
         }
         if (indexOfParagraph <= 0) indexOfParagraph = 0;
         else // иначе уменьшаем индекс
@@ -182,7 +192,7 @@ public class User implements Serializable{
     public String getMessageForReply(){
         // если список параграфов пустой(не ссылается ни на какой список), то возвращаем соответствующее сообщение
         if (listOfParagraphs == null){
-            setButtonsNeed(false);
+            setButtonsMode(BUTTONS_MODE.NONE);
             return "У меня не получилось найти что-либо по этому запросу.";
 
             // иначе возвращаем соответствубщий параграф
@@ -202,10 +212,10 @@ public class User implements Serializable{
     public void setListOfParagraphs(ArrayList<String> listOfParagraphs) {
         indexOfParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
         this.listOfParagraphs = listOfParagraphs;
-        if (this.listOfParagraphs == null || this.listOfParagraphs.size() <= 1){
-            setButtonsNeed(false);
+        if (this.listOfParagraphs == null || this.listOfParagraphs.size() == 1){
+            setButtonsMode(BUTTONS_MODE.NONE);
         } else {
-            setButtonsNeed(true);
+            setButtonsMode(BUTTONS_MODE.DEFAULT);
         }
     }
     public String getLastSearchMessage() {
@@ -222,47 +232,71 @@ public class User implements Serializable{
             setToc(null);
             ArrayList<String> text = new ArrayList<String>();
             text.add("Привет. Меня зовут WikiBot.\n" +
-                    "Если ты хочешь найти что-то в WikiPedia, скажи мне.\n" +
+                    "Если ты хочешь найти что-то в WikiPedia или WikiQuotes, скажи мне.\n" +
                     "Я попробую найти это для тебя.\n" +
-                    "Например, введи слово Tesla.\n" +
-                    "Также ты можешь ввести:\n" +
-                    "/random для поиска случайной статьи\n" +
-                    "/help для просмотра справочной информации");
+                    "Для начала, выбери режим поиска:");
             setListOfParagraphs(text);
+            setButtonsMode(BUTTONS_MODE.CHOOSE_SEARCH_MODE);
 
+        }
+        else if (lastSearchMessage.equals("/topics")){
+            setTopicsMode(true);
+            this.lastSearchMessage = null;
+            setToc(null);
+            ArrayList<String> text = new ArrayList<String>();
+            text.add("Напиши, что мне найти в Wikipedia");
+            setListOfParagraphs(text);
+            setButtonsMode(BUTTONS_MODE.HELP);
+        }
+        else if (lastSearchMessage.equals("/quotes")){
+            setTopicsMode(false);
+            this.lastSearchMessage = null;
+            setToc(null);
+            ArrayList<String> text = new ArrayList<String>();
+            text.add("В режиме поиска цитат вы можете искать цитаты по ключевым словам.\n" +
+                    "Например:\n" +
+                    "- Шрек\n" +
+                    "- Преступление и наказание\n" +
+                    "- Счастье\n" +
+                    "- Эйнштейн");
+            setListOfParagraphs(text);
+            setButtonsMode(BUTTONS_MODE.HELP);
         }
         else if (lastSearchMessage.equals("/random")){
             // случай, когда пользователь нажал показать случайную статью
             this.lastSearchMessage = null;
             HttpModule httpModule = new HttpModule();
 
-            setListOfParagraphs(httpModule.searchTopicInWikiWithToc("/random"));
+            if (isTopicsMode){
+                setListOfParagraphs(httpModule.searchTopicInWikiWithToc("/random"));
+            } else {
+                setListOfParagraphs(httpModule.searchQuotesInWikiWithToc("/random"));
+            }
 
             setToc(httpModule.getTocList());
             setTopic_name(httpModule.getTOPIC_NAME());
+            setButtonsMode(BUTTONS_MODE.DEFAULT);
 
-
-            for (Map.Entry<String,String> toc_item: toc.entrySet()){
-                listOfCases.add(toc_item.getValue());
+            if (httpModule.isError()){
+                setButtonsMode(BUTTONS_MODE.NONE);
             }
+
         }
         else if (lastSearchMessage.equals("")){
             // случай, когда пользователь послал картинку или документ
             this.lastSearchMessage = null;
             setListOfParagraphs(null); // список параграфов обнуляем
-
-
+            setToc(null);
+            setTopic_name(null);
+            setButtonsMode(BUTTONS_MODE.NONE);
         }
         else if (lastSearchMessage.equals("-->>")){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             incrementIndex();
-
         }
         else if (lastSearchMessage.equals("<<--")){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             decrementIndex();
-
-
         }
         else if (lastSearchMessage.equals("/showMenu")){
             setNeedToShowToc(true);
@@ -273,9 +307,8 @@ public class User implements Serializable{
             setListOfParagraphs(image);
         }
         else if (listOfCases.contains(lastSearchMessage)){ // если страница меню совпадает с текущей менюшкой
-
             setIndexOfParagraph(Integer.parseInt(lastSearchMessage));
-
+            setButtonsMode(BUTTONS_MODE.DEFAULT);
         }
         else {
             // если новое сообщение ок, то ищем по этому сообщению статью в вики
@@ -285,24 +318,30 @@ public class User implements Serializable{
             HttpModule httpModule = new HttpModule();
 
             // ищем новые параграфы
-            setListOfParagraphs(httpModule.searchTopicInWikiWithToc(this.lastSearchMessage));
+            if (isTopicsMode){
+                setListOfParagraphs(httpModule.searchTopicInWikiWithToc(this.lastSearchMessage));
+            } else {
+                setListOfParagraphs(httpModule.searchQuotesInWikiWithToc(this.lastSearchMessage));
+            }
+
             // устанавливаем меню
             setToc(httpModule.getTocList());
             setTopic_name(httpModule.getTOPIC_NAME());
-            // надо показывать меню?
 
-
-            for (Map.Entry<String,String> toc_item: toc.entrySet()){
-                listOfCases.add(toc_item.getValue());
+            if (httpModule.isError()){
+                setButtonsMode(BUTTONS_MODE.NONE);
             }
 
         }
+
         // если надо показать меню, то показываем меню. иначе отправляем сообщение
         if (isNeedShowToc()){
             wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name());
         } else {
-            wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),isButtonsNeed);
+            wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),getModeButtons());
         }
+
+
         // запуск новой нити для автоматической отправки случайной статьи по истечении таймера
         activateNewTimerThread();
     }
