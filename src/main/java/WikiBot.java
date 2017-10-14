@@ -73,7 +73,7 @@ public class WikiBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(messageForReply);
-        if (modeOfButtons.equals(BUTTONS_MODE.HELP)){
+        if (modeOfButtons.equals(BUTTONS_MODE.SEARCH_MODE)){
             // создаем клавиатуру из двух кнопок "назад" и "вперед"
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
@@ -83,13 +83,33 @@ public class WikiBot extends TelegramLongPollingBot {
 
             InlineKeyboardButton buttonRandom = new InlineKeyboardButton();
             buttonRandom.setText("\uD83D\uDD00 Случайная статья");
-            buttonRandom.setCallbackData("/random");
+            buttonRandom.setCallbackData(RESERVED_ANSWER.RANDOM);
 
             InlineKeyboardButton buttonHelp = new InlineKeyboardButton();
             buttonHelp.setText("ℹ️ Сменить режим поиска");
-            buttonHelp.setCallbackData("/help");
+            buttonHelp.setCallbackData(RESERVED_ANSWER.START);
 
             listMenu.add(buttonHelp);
+            listMenu.add(buttonRandom);
+
+            lists.add(listMenu);
+
+            inlineKeyboardMarkup.setKeyboard(lists);
+
+            message.setReplyMarkup(inlineKeyboardMarkup);
+        }
+        else if (modeOfButtons.equals(BUTTONS_MODE.INSTRUCTIONS)){
+            // создаем клавиатуру из двух кнопок "назад" и "вперед"
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
+
+            List<InlineKeyboardButton> listMenu = new ArrayList<InlineKeyboardButton>();
+
+
+            InlineKeyboardButton buttonRandom = new InlineKeyboardButton();
+            buttonRandom.setText("\uD83C\uDFC1 Начать пользоваться ботом");
+            buttonRandom.setCallbackData(RESERVED_ANSWER.START);
+
             listMenu.add(buttonRandom);
 
             lists.add(listMenu);
@@ -104,30 +124,22 @@ public class WikiBot extends TelegramLongPollingBot {
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
             List<InlineKeyboardButton> listNavigation = new ArrayList<InlineKeyboardButton>();
-            List<InlineKeyboardButton> listMenu = new ArrayList<InlineKeyboardButton>();
 
             InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
-            inlineKeyboardButton.setText("⬅️ Назад");
-            inlineKeyboardButton.setCallbackData("<<--");
+            inlineKeyboardButton.setText("⬅️");
+            inlineKeyboardButton.setCallbackData(RESERVED_ANSWER.PREV);
             InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-            inlineKeyboardButton2.setText("Вперед ➡️");
-            inlineKeyboardButton2.setCallbackData("-->>");
-
-            listNavigation.add(inlineKeyboardButton);
-            listNavigation.add(inlineKeyboardButton2);
-
-            InlineKeyboardButton buttonHelp = new InlineKeyboardButton();
-            buttonHelp.setText("ℹ️ Сменить режим поиска");
-            buttonHelp.setCallbackData("/help");
+            inlineKeyboardButton2.setText("➡️");
+            inlineKeyboardButton2.setCallbackData(RESERVED_ANSWER.NEXT);
 
             InlineKeyboardButton buttonMenu = new InlineKeyboardButton();
-            buttonMenu.setText("\uD83D\uDCD7 Оглавление");
-            buttonMenu.setCallbackData("/showMenu");
+            buttonMenu.setText("\uD83D\uDCD7");
+            buttonMenu.setCallbackData(RESERVED_ANSWER.SHOW_MENU);
 
-            listMenu.add(buttonHelp);
-            listMenu.add(buttonMenu);
+            listNavigation.add(inlineKeyboardButton);
+            listNavigation.add(buttonMenu);
+            listNavigation.add(inlineKeyboardButton2);
 
-            lists.add(listMenu);
             lists.add(listNavigation);
 
 
@@ -135,25 +147,31 @@ public class WikiBot extends TelegramLongPollingBot {
 
             message.setReplyMarkup(inlineKeyboardMarkup);
         }
-        else if (modeOfButtons.equals(BUTTONS_MODE.CHOOSE_SEARCH_MODE)){
+        else if (modeOfButtons.equals(BUTTONS_MODE.START)){
 
             // создаем клавиатуру из двух кнопок "назад" и "вперед"
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
             List<InlineKeyboardButton> listNavigation = new ArrayList<InlineKeyboardButton>();
-            List<InlineKeyboardButton> listMenu = new ArrayList<InlineKeyboardButton>();
+            List<InlineKeyboardButton> listInstruction = new ArrayList<InlineKeyboardButton>();
 
             InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
             inlineKeyboardButton.setText("\uD83D\uDCD6 Искать статьи");
-            inlineKeyboardButton.setCallbackData("/topics");
+            inlineKeyboardButton.setCallbackData(RESERVED_ANSWER.TOPICS);
             InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
             inlineKeyboardButton2.setText("\uD83D\uDCD4 Искать цитаты");
-            inlineKeyboardButton2.setCallbackData("/quotes");
+            inlineKeyboardButton2.setCallbackData(RESERVED_ANSWER.QUOTES);
 
             listNavigation.add(inlineKeyboardButton);
             listNavigation.add(inlineKeyboardButton2);
 
-            lists.add(listMenu);
+            InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
+            inlineKeyboardButton3.setText("\uD83C\uDD98 Инструкция");
+            inlineKeyboardButton3.setCallbackData(RESERVED_ANSWER.INSTRUCTION);
+
+            listInstruction.add(inlineKeyboardButton3);
+
+            lists.add(listInstruction);
             lists.add(listNavigation);
 
 
@@ -169,13 +187,18 @@ public class WikiBot extends TelegramLongPollingBot {
         }
     }
     // метод посылает меню пользователю
-    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName){
+    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName, boolean isTopic){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-
-        message.setText(String.format("Материал из Википедии — свободной энциклопедии\n" +
+        String first;
+        if (isTopic){
+            first = "Материал из Википедии — свободной энциклопедии.";
+        } else {
+            first = "Материал из Викицитатника.";
+        }
+        message.setText(String.format("%s\n" +
                 "Тема поиска: %s.\n" +
-                "Выберите пункт меню для просмотра информации:",topicName.toUpperCase()));
+                "Выберите пункт меню для просмотра информации:",first,topicName.toUpperCase()));
 
         // создаем клавиатуру из содержания
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -189,6 +212,19 @@ public class WikiBot extends TelegramLongPollingBot {
             list.add(inlineKeyboardButton);
             lists.add(list);
         }
+        list = new ArrayList<InlineKeyboardButton>();
+        InlineKeyboardButton buttonHelp = new InlineKeyboardButton();
+        buttonHelp.setText("ℹ️ Сменить режим поиска");
+        buttonHelp.setCallbackData(RESERVED_ANSWER.START);
+        list.add(buttonHelp);
+        lists.add(list);
+
+        list = new ArrayList<InlineKeyboardButton>();
+        InlineKeyboardButton buttonRandom = new InlineKeyboardButton();
+        buttonRandom.setText("\uD83D\uDD00 Случайная статья");
+        buttonRandom.setCallbackData(RESERVED_ANSWER.RANDOM);
+        list.add(buttonRandom);
+        lists.add(list);
 
         inlineKeyboardMarkup.setKeyboard(lists);
 

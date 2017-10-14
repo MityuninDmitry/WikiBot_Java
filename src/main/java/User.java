@@ -227,7 +227,7 @@ public class User implements Serializable{
         // если сообщение null, то пользователь послал документ или картинку
         if (lastSearchMessage == null) lastSearchMessage = "";
         // если пользователь ввел старт или помощь, то соответствующее сообщение
-        if (lastSearchMessage.equals("/start") || lastSearchMessage.equals("/help")){
+        if (lastSearchMessage.equals(RESERVED_ANSWER.START)){
             this.lastSearchMessage = null;
             setToc(null);
             ArrayList<String> text = new ArrayList<String>();
@@ -236,19 +236,45 @@ public class User implements Serializable{
                     "Я попробую найти это для тебя.\n" +
                     "Для начала, выбери режим поиска:");
             setListOfParagraphs(text);
-            setButtonsMode(BUTTONS_MODE.CHOOSE_SEARCH_MODE);
+            setButtonsMode(BUTTONS_MODE.START);
 
         }
-        else if (lastSearchMessage.equals("/topics")){
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.INSTRUCTION)){
+            this.lastSearchMessage = null;
+            setToc(null);
+            ArrayList<String> text = new ArrayList<String>();
+            text.add("Краткая инструкция пользования WikiBot:\n" +
+                    "1. Для начала вам необходимо задать боту режим поиска - либо статьи в Википедии, либо цитаты в Викицитатнице.\n" +
+                    "2. После того, как вы зададите режим, бот будет искать информацию в соответствующем источнике.\n" +
+                    "3. Далее вы можете:\n" +
+                    "3.1 Ввести ключевое слово для поиска статьи\n" +
+                    "3.2 Сменить режим поиска\n" +
+                    "3.3 Нажать кнопку \"случайная статья\" после которой бот выберет и предложит вам случайную статью\n" +
+                    "4. Если бот не найдет искомую информацию, то он так и напишет\n" +
+                    "5. А если найдет, то он постарается сформировать оглавление\n" +
+                    "6. В оглавлении вы можете начать просмотр статьи:\n" +
+                    "6.1 Либо с самого начала \n" +
+                    "6.2 Либо с соответстствующего пункта оглавления\n" +
+                    "6.3 Также внизу будут кнопки поиска случайной статьи и смены режима поиска \n" +
+                    "7. Во время просмотра статьи в вашем распоряжении будут три кнопки:\n" +
+                    "7.1 ⬅️ - посмотреть предыдущий параграф статьи\n" +
+                    "7.2 \uD83D\uDCD7 - вернуться к оглавлению статьи\n" +
+                    "7.3 ➡️ - посмотреть следующий параграф статьи\n" +
+                    "8. Вот и все, приятного пользования.");
+            setListOfParagraphs(text);
+            setButtonsMode(BUTTONS_MODE.INSTRUCTIONS);
+
+        }
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.TOPICS)){
             setTopicsMode(true);
             this.lastSearchMessage = null;
             setToc(null);
             ArrayList<String> text = new ArrayList<String>();
             text.add("Напиши, что мне найти в Wikipedia");
             setListOfParagraphs(text);
-            setButtonsMode(BUTTONS_MODE.HELP);
+            setButtonsMode(BUTTONS_MODE.SEARCH_MODE);
         }
-        else if (lastSearchMessage.equals("/quotes")){
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.QUOTES)){
             setTopicsMode(false);
             this.lastSearchMessage = null;
             setToc(null);
@@ -260,9 +286,9 @@ public class User implements Serializable{
                     "- Счастье\n" +
                     "- Эйнштейн");
             setListOfParagraphs(text);
-            setButtonsMode(BUTTONS_MODE.HELP);
+            setButtonsMode(BUTTONS_MODE.SEARCH_MODE);
         }
-        else if (lastSearchMessage.equals("/random")){
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.RANDOM)){
             // случай, когда пользователь нажал показать случайную статью
             this.lastSearchMessage = null;
             HttpModule httpModule = new HttpModule();
@@ -290,15 +316,15 @@ public class User implements Serializable{
             setTopic_name(null);
             setButtonsMode(BUTTONS_MODE.NONE);
         }
-        else if (lastSearchMessage.equals("-->>")){
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.NEXT)){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             incrementIndex();
         }
-        else if (lastSearchMessage.equals("<<--")){
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.PREV)){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             decrementIndex();
         }
-        else if (lastSearchMessage.equals("/showMenu")){
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.SHOW_MENU)){
             setNeedToShowToc(true);
         }
         else if (lastSearchMessage.equals("/image")){
@@ -336,7 +362,7 @@ public class User implements Serializable{
 
         // если надо показать меню, то показываем меню. иначе отправляем сообщение
         if (isNeedShowToc()){
-            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name());
+            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name(),isTopicsMode);
         } else {
             wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),getModeButtons());
         }

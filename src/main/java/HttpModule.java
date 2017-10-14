@@ -63,6 +63,7 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","dablink noprint").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","thumb tright").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","thumbinner").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","metadata plainlinks navigation-box").remove(); // удаляем таблички
 
         // забираем заголовок
         TOPIC_NAME = tags.getElementsByTag("h1").text();
@@ -217,6 +218,9 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","dablink noprint").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","thumb tright").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","thumbinner").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","metadata plainlinks navigation-box").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","metadata plainlinks ambox ambox-content").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","infobox sisterproject noprint wikipedia-box").remove(); // удаляем таблички
 
         // забираем заголовок
         TOPIC_NAME = tags.getElementsByTag("h1").text();
@@ -265,15 +269,23 @@ public class HttpModule {
 
             text.add(allTextMas[i]);
         }
+
         // удаляем пустые элементы
         for (int i = 0; i < text.size(); i++) {
             if (text.get(i).length() <= 1){
                 text.remove(i);
-            }
-            if (text.get(i).equals("") || text.get(i) == null){
-                text.remove(i);
+
             }
         }
+        for (int i = 0; i < text.size(); i++) {
+
+            if (text.get(i).equals("") || text.get(i) == null){
+                text.remove(i);
+
+            }
+        }
+
+
         // удаляем лишние пункты меню(которые пустые)
         // идем по кускам текста, в который включены также пункты меню
         for (int i = 0; i < text.size() - 1; i++) {
@@ -312,7 +324,7 @@ public class HttpModule {
 
             }
         }
-
+        /*
         System.out.println("============ MENU =============");
         for (Map.Entry<String,String> map: tocList.entrySet()){
             System.out.println(map.getKey() + ": " + map.getValue());
@@ -322,6 +334,7 @@ public class HttpModule {
 
             System.out.println(i + ": " + text.get(i));
         }
+        */
         return text;
     }
 }
