@@ -206,7 +206,7 @@ public class WikiBot extends TelegramLongPollingBot {
         }
     }
     // метод посылает меню пользователю
-    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName, boolean isTopic){
+    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName, boolean isTopic, String link){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         String modeText;
@@ -231,6 +231,18 @@ public class WikiBot extends TelegramLongPollingBot {
             list.add(inlineKeyboardButton);
             lists.add(list);
         }
+        if (!link.equals("")){
+            list = new ArrayList<InlineKeyboardButton>();
+            InlineKeyboardButton buttonLink = new InlineKeyboardButton();
+            buttonLink.setText("\uD83C\uDF10 Открыть в браузере");
+            buttonLink.setUrl(link);
+            list.add(buttonLink);
+            lists.add(list);
+        }
+
+
+
+
         list = new ArrayList<InlineKeyboardButton>();
         InlineKeyboardButton buttonHelp = new InlineKeyboardButton();
         buttonHelp.setText("ℹ️ Сменить режим поиска");

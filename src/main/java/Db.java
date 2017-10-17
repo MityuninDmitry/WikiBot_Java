@@ -32,10 +32,8 @@ public class Db {
             + "	topic_name text ,\n"
             + "	isNeedShowToc text ,\n"
             + "	isTopicsMode text, \n"
-            + "	firstName text ,\n"
-            + "	lastName text ,\n"
-            + "	userName text ,\n" +
-            "FOREIGN KEY (id_in_table_Users) REFERENCES Users(id)"
+            + "	lastWebLink text ,\n"
+            + "FOREIGN KEY (id_in_table_Users) REFERENCES Users(id)"
             + ");";
     /** Запрос на вставку новых данных в таблицу Users
      * */
@@ -59,8 +57,9 @@ public class Db {
             "listOfCases," +
             "topic_name," +
             "isNeedShowToc," +
-            "isTopicsMode)" +
-            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?) ";
+            "isTopicsMode," +
+            "lastWebLink)" +
+            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?,?) ";
     /** Обновление таблицы Users */
     private static String UPDATE_SQL_STATEMENT_IN_USERS = "UPDATE " + table_Users + " "
             + "SET UserId = ? , " +
@@ -80,7 +79,8 @@ public class Db {
             "listOfCases = ?,  " +
             "topic_name = ? , " +
             "isNeedShowToc = ?, " +
-            "isTopicsMode = ?" +
+            "isTopicsMode = ?," +
+            "lastWebLink = ?" +
             "WHERE UserSettings.id_in_table_Users = ?";
     // ID пользователей
     private static ArrayList<Integer> loadedUsersIdsList = new ArrayList<Integer>();
@@ -108,6 +108,7 @@ public class Db {
     // Загружаем данные из таблицы и преобразуем в нужный формат
     public static ArrayList<String> loadListOfParagraphs(String stringList){
         ArrayList<String> result = new ArrayList<String>();
+        if (stringList.equals("")) return result;
         String[] mas = stringList.split("parse");
         for (String part: mas){
             result.add(part);
@@ -116,6 +117,7 @@ public class Db {
     }
     public static Map<String, String> loadToc(String stringToc){
         Map<String, String> tocList = new LinkedHashMap<String, String>();
+        if (stringToc.equals("")) return tocList;
         String[] mas = stringToc.split("parse2");
         for (String pos: mas){
             String[] innerMas = pos.split("parse1");
@@ -126,6 +128,7 @@ public class Db {
     }
     public static ArrayList<String> loadListOfCases(String stringList){
         ArrayList<String> result = new ArrayList<String>();
+        if (stringList.equals("")) return result;
         String[] mas = stringList.split("parse");
         for (String part: mas){
             result.add(part);
@@ -163,6 +166,7 @@ public class Db {
                 newUser.setTopic_name(rs.getString("topic_name"));
                 newUser.setNeedToShowToc(Boolean.parseBoolean(rs.getString("isNeedShowToc")));
                 newUser.setTopicsMode(Boolean.parseBoolean(rs.getString("isTopicsMode")));
+                newUser.setLastWebLink(rs.getString("lastWebLink"));
                 // добавляем в список ID пользователя
                 loadedUsersIdsList.add(newUser.getUserId());
                 // добавляем пользователя в список пользователей
@@ -224,8 +228,9 @@ public class Db {
             pstmt.setString(8, user.getTopic_name());
             pstmt.setString(9, user.isNeedShowToc()+"");
             pstmt.setString(10, user.getTopicMode() + "");
+            pstmt.setString(11, user.getLastWebLink());
             // по id понимаем, какую запись обновлять
-            pstmt.setInt(11, id);
+            pstmt.setInt(12, id);
             // выполняем апдейт
             pstmt.executeUpdate();
 
@@ -298,6 +303,7 @@ public class Db {
             pstmt.setString(9, user.getTopic_name());
             pstmt.setString(10, user.isNeedShowToc()+"");
             pstmt.setString(11, user.getTopicMode() + "");
+            pstmt.setString(12, user.getLastWebLink());
             // выполняем запрос
             pstmt.executeUpdate();
             //System.out.println("=== User was inserted ===");

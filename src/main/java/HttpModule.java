@@ -5,6 +5,8 @@ import org.jsoup.nodes.Element;
 
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.*;
 
 public class HttpModule {
@@ -12,6 +14,19 @@ public class HttpModule {
     private String TOPIC_NAME = "";
     private boolean isError = false;
     private String errorName;
+    private String link;
+    public String getLink() {
+        return link;
+    }
+    public void setLink(String link) {
+
+        try {
+            this.link = URLDecoder.decode(link,"utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+    }
     public boolean isError(){
         return isError;
     }
@@ -33,10 +48,13 @@ public class HttpModule {
         try {
             // ищем статью в вики
             if (searchMessage.equals("/random")){
+
                 doc = Jsoup.connect("https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
+                setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
             }
             else {
-                doc = Jsoup.connect("https://ru.wikipedia.org/wiki/" + searchMessage.trim()).get();
+                setLink("https://ru.wikipedia.org/wiki/" + searchMessage.trim());
+                doc = Jsoup.connect(link).get();
             }
 
 
@@ -47,9 +65,10 @@ public class HttpModule {
             if (e.toString().matches(".*Status=404.*") && !searchMessage.equals("/random")){
                 errorName = "404";
                 try {
-                    doc = Jsoup.connect("https://ru.wikipedia.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, true)).get();
+                    setLink("https://ru.wikipedia.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, true));
+                    doc = Jsoup.connect(getLink()).get();
                 } catch (Exception e1) {
-
+                    setLink("");
                     isError = true;
                     // выходим из метода
                     text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
@@ -58,6 +77,7 @@ public class HttpModule {
                     return text;
                 }
             } else {
+                setLink("");
                 text.add("У меня не получилось найти что-либо по этому запросу.\n" +
                         "Попробуйте поискать информацию в другом режиме поиска.");
                 isError = true;
@@ -67,6 +87,7 @@ public class HttpModule {
 
         }
         catch (IOException e) { // если любая другая ошибка
+            setLink("");
             e.printStackTrace();
             text.add("Прошу прощения, но с интернет соединением что-то не так. Пожалуйста, попробуйте позже.");
             isError = true;
@@ -206,9 +227,12 @@ public class HttpModule {
             // ищем статью в вики
             if (searchMessage.equals("/random")){
                 doc = Jsoup.connect("https://ru.wikiquote.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
+                setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
             }
             else {
-                doc = Jsoup.connect("https://ru.wikiquote.org/wiki/" + searchMessage.trim()).get();
+                setLink("https://ru.wikiquote.org/wiki/" + searchMessage.trim());
+                doc = Jsoup.connect(link).get();
+
             }
 
 
@@ -219,9 +243,10 @@ public class HttpModule {
             if (e.toString().matches(".*Status=404.*") && !searchMessage.equals("/random")){
                 errorName = "404";
                 try {
-                    doc = Jsoup.connect("https://ru.wikiquote.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, false)).get();
+                    setLink("https://ru.wikiquote.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, false));
+                    doc = Jsoup.connect(link).get();
                 } catch (Exception e1) {
-
+                    setLink("");
                     isError = true;
                     // выходим из метода
                     text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
@@ -230,6 +255,7 @@ public class HttpModule {
                     return text;
                 }
             } else {
+                setLink("");
                 text.add("У меня не получилось найти что-либо по этому запросу.\n" +
                         "Попробуйте поискать информацию в другом режиме поиска.");
                 isError = true;
@@ -238,6 +264,7 @@ public class HttpModule {
             }
         }
         catch (IOException e) { // если любая другая ошибка
+            setLink("");
             e.printStackTrace();
             text.add("Прошу прощения, но с интернет соединением что-то не так. Пожалуйста, попробуйте позже.");
             isError = true;
