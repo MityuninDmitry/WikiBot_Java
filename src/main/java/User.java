@@ -21,6 +21,40 @@ public class User implements Serializable{
     private boolean isTopicsMode = true; // true - Topics, false - Quotes
     private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
     private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
+    private String firstName;
+    private String lastName;
+    private String userName;
+
+    public void setListOfCases(ArrayList<String> listOfCases) {
+        this.listOfCases = listOfCases;
+    }
+    public String getFirstName() {
+        return firstName;
+    }
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+    public String getLastName() {
+        return lastName;
+    }
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+    public String getUserName() {
+        return userName;
+    }
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+    public Map<String, String> getToc() {
+        return toc;
+    }
+    public ArrayList<String> getListOfCases(){
+        return listOfCases;
+    }
+    public boolean getTopicMode(){
+        return isTopicsMode;
+    }
     public void setTopicsMode(boolean isTopicsMode){
         this.isTopicsMode = isTopicsMode;
     }
@@ -64,6 +98,43 @@ public class User implements Serializable{
     // конструктор
     public User(Integer userId) {
         UserId = userId;
+    }
+    public static void saveUsersToDB(){
+        // создаем БД
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // идем по всем пользователям
+        int index;
+        for (int i = 0; i < usersList.size(); i++) {
+            index = i + 1;
+            // проверяем существует ли пользователь в БД
+            if (Db.isUserExist(index)){
+                // если существует, то апдейтим пользователя
+                Db.updateUser(index,usersList.get(i));
+            } else {
+                // если не сущестсует, то инсертим пользователя
+                Db.insertNewUser(usersList.get(i));
+            }
+        }
+        // закрываем соединение к БД
+        Db.close();
+    }
+    public static void loadUsersFromDB(){
+        // создаем БД
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // загружаем пользователей
+        usersList = Db.loadUsers();
+        usersIdsList = Db.getLoadedUsersIdsList();
+        // закрываем соединение к БД
+        Db.close();
+        System.out.println("Users was loaded");
     }
     // метод сохраняет список пользователей
     public static void saveUsers(){

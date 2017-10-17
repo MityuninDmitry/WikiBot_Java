@@ -17,6 +17,9 @@ public class WikiBot extends TelegramLongPollingBot {
         User currentUser;
         Integer userId;
         String messageFromLastUpdate;
+        String firstName;
+        String lastName;
+        String userName;
         // анализируем полученный апдейт
         // смотрим есть ли текст в этом сообщении или это колбэк запрос
         // если есть текст, то это сообщение от старого или нового пользователя
@@ -24,6 +27,11 @@ public class WikiBot extends TelegramLongPollingBot {
             // получаем ИД чата и пользователя из апдейта
             chatId = update.getMessage().getChat().getId();
             userId = update.getMessage().getFrom().getId();
+
+            firstName = update.getMessage().getFrom().getFirstName();
+            lastName = update.getMessage().getFrom().getLastName();
+            userName = update.getMessage().getFrom().getUserName();
+
             // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getMessage().getText();
             // смотрим изветнсый это пользователь или нет
@@ -41,9 +49,16 @@ public class WikiBot extends TelegramLongPollingBot {
         }
         else {
             // если это CallbackQuery запрос
+
             // получаем ИД чата и пользователя из апдейта
             chatId = update.getCallbackQuery().getMessage().getChat().getId();
             userId = update.getCallbackQuery().getFrom().getId();
+
+            firstName = update.getCallbackQuery().getFrom().getFirstName();
+            lastName = update.getCallbackQuery().getFrom().getLastName();
+            userName = update.getCallbackQuery().getFrom().getUserName();
+
+
             // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getCallbackQuery().getData();
         }
@@ -51,6 +66,9 @@ public class WikiBot extends TelegramLongPollingBot {
         currentUser = User.getCurrentUserForWork(userId);
         // устанавливаем пользователю последний чатИД
         currentUser.setLastChatId(chatId);
+        currentUser.setFirstName(firstName);
+        currentUser.setLastName(lastName);
+        currentUser.setUserName(userName);
         // передаем пользователю бота для отправки сообщений
         currentUser.setWikiBot(this);
         // устанавливаем пользователю последний искомый текст и параграфы
@@ -58,7 +76,8 @@ public class WikiBot extends TelegramLongPollingBot {
 
         // сохраняем пользователей в файл после каждого апдейта
         // p.s не уверен, что это разумно, т.к если будет много апдейтов, то будет большая нагрузка
-        User.saveUsers();
+        //User.saveUsers();
+        User.saveUsersToDB();
 
     }
     public String getBotUsername() {
@@ -190,15 +209,15 @@ public class WikiBot extends TelegramLongPollingBot {
     public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName, boolean isTopic){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        String first;
+        String modeText;
         if (isTopic){
-            first = "Материал из Википедии — свободной энциклопедии.";
+            modeText = "Материал из Википедии — свободной энциклопедии.";
         } else {
-            first = "Материал из Викицитатника.";
+            modeText = "Материал из Викицитатника.";
         }
         message.setText(String.format("%s\n" +
                 "Тема поиска: %s.\n" +
-                "Выберите пункт меню для просмотра информации:",first,topicName.toUpperCase()));
+                "Выберите пункт меню для просмотра информации:",modeText,topicName.toUpperCase()));
 
         // создаем клавиатуру из содержания
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();

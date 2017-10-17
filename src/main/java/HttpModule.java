@@ -10,9 +10,13 @@ import java.util.*;
 public class HttpModule {
     private Map<String, String> tocList = new LinkedHashMap<String, String>();
     private String TOPIC_NAME = "";
-    private boolean error = false;
+    private boolean isError = false;
+    private String errorName;
     public boolean isError(){
-        return error;
+        return isError;
+    }
+    public String getErrorName(){
+        return errorName;
     }
     public String getTOPIC_NAME() {
         return TOPIC_NAME;
@@ -25,7 +29,7 @@ public class HttpModule {
         // первый пункт меню добавляем сразу
         tocList.put("Просмотр статьи с начала", "0");
         // объявляем документ
-        Document doc;
+        Document doc = null;
         try {
             // ищем статью в вики
             if (searchMessage.equals("/random")){
@@ -40,15 +44,32 @@ public class HttpModule {
         catch (HttpStatusException e) { // если 500, 404 ошибки, то
             e.printStackTrace(); // печатаем трейс
             // в результирующий лист добавляем текст
-            text.add("У меня не получилось найти что-либо по этому запросу.");
-            error = true;
-            // выходим из метода
-            return text;
+            if (e.toString().matches(".*Status=404.*") && !searchMessage.equals("/random")){
+                errorName = "404";
+                try {
+                    doc = Jsoup.connect("https://ru.wikipedia.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, true)).get();
+                } catch (Exception e1) {
+
+                    isError = true;
+                    // выходим из метода
+                    text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
+                            "Попробуйте поискать информацию в другом режиме поиска.");
+                    e1.printStackTrace();
+                    return text;
+                }
+            } else {
+                text.add("У меня не получилось найти что-либо по этому запросу.\n" +
+                        "Попробуйте поискать информацию в другом режиме поиска.");
+                isError = true;
+                // выходим из метода
+                return text;
+            }
+
         }
         catch (IOException e) { // если любая другая ошибка
             e.printStackTrace();
             text.add("Прошу прощения, но с интернет соединением что-то не так. Пожалуйста, попробуйте позже.");
-            error = true;
+            isError = true;
             return text;
         }
         Element tags = doc.body().getElementById("content"); // считываем контент
@@ -195,15 +216,31 @@ public class HttpModule {
         catch (HttpStatusException e) { // если 500, 404 ошибки, то
             e.printStackTrace(); // печатаем трейс
             // в результирующий лист добавляем текст
-            text.add("У меня не получилось найти что-либо по этому запросу.");
-            error = true;
-            // выходим из метода
-            return text;
+            if (e.toString().matches(".*Status=404.*") && !searchMessage.equals("/random")){
+                errorName = "404";
+                try {
+                    doc = Jsoup.connect("https://ru.wikiquote.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, false)).get();
+                } catch (Exception e1) {
+
+                    isError = true;
+                    // выходим из метода
+                    text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
+                            "Попробуйте поискать информацию в другом режиме поиска.");
+                    e1.printStackTrace();
+                    return text;
+                }
+            } else {
+                text.add("У меня не получилось найти что-либо по этому запросу.\n" +
+                        "Попробуйте поискать информацию в другом режиме поиска.");
+                isError = true;
+                // выходим из метода
+                return text;
+            }
         }
         catch (IOException e) { // если любая другая ошибка
             e.printStackTrace();
             text.add("Прошу прощения, но с интернет соединением что-то не так. Пожалуйста, попробуйте позже.");
-            error = true;
+            isError = true;
             return text;
         }
         Element tags = doc.body().getElementById("content"); // считываем контент
