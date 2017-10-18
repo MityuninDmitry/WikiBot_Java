@@ -137,7 +137,12 @@ public class User implements Serializable{
         return topic_name;
     }
     public void setNeedToShowToc(boolean needToShowToc){
-        this.isNeedShowToc = needToShowToc;
+        if (toc == null || toc.size() <= 1){
+            this.isNeedShowToc = false;
+        } else {
+            this.isNeedShowToc = needToShowToc;
+        }
+
     }
     public boolean isNeedShowToc(){
         return isNeedShowToc;

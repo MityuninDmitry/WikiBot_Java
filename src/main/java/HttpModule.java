@@ -61,45 +61,34 @@ public class HttpModule {
                 similarTopics = new ArrayList<String>();
             }
             else {
+                /*
                 setLink("https://ru.wikipedia.org/wiki/" + searchMessage.trim());
                 doc = Jsoup.connect(link).get();
                 similarTopics = GoogleSender.getSimilarTopics(searchMessage, true);
+                */
+                doc = GoogleSender.googleIt(searchMessage.trim(),true);
+                setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
+                similarTopics = GoogleSender.getSimilarTopics();
             }
 
 
         }
         catch (HttpStatusException e) { // если 500, 404 ошибки, то
             e.printStackTrace(); // печатаем трейс
-            // в результирующий лист добавляем текст
-            if (e.toString().matches(".*Status=404.*") && !searchMessage.equals("/random")){
-                errorName = "404";
-                try {
-                    setLink("https://ru.wikipedia.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, true));
-                    doc = Jsoup.connect(getLink()).get();
-                    similarTopics = GoogleSender.getSimilarTopics(searchMessage, true);
-                } catch (Exception e1) {
-                    setLink("");
-                    isError = true;
-                    // выходим из метода
-                    text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
-                            "Попробуйте поискать информацию в другом режиме поиска.");
-                    e1.printStackTrace();
-                    return text;
-                }
-            } else {
-                setLink("");
-                text.add("У меня не получилось найти что-либо по этому запросу.\n" +
-                        "Попробуйте поискать информацию в другом режиме поиска.");
-                isError = true;
-                // выходим из метода
-                return text;
-            }
+
+            setLink("");
+            isError = true;
+            // выходим из метода
+            text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
+                    "Попробуйте поискать информацию в другом режиме поиска.");
+
+            return text;
 
         }
-        catch (IOException e) { // если любая другая ошибка
+        catch (Exception e){
             setLink("");
             e.printStackTrace();
-            text.add("Прошу прощения, но с интернет соединением что-то не так. Пожалуйста, попробуйте позже.");
+            text.add("По вашему запросу ничего не найдено.");
             isError = true;
             return text;
         }
@@ -118,7 +107,7 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","metadata plainlinks navigation-box").remove(); // удаляем таблички
 
         // забираем заголовок
-        TOPIC_NAME = tags.getElementsByTag("h1").text();
+        TOPIC_NAME = GoogleSender.getTopicName();
         // удаляем заголовок
         tags.getElementsByTag("h1").remove();
 
@@ -241,44 +230,33 @@ public class HttpModule {
                 similarTopics = new ArrayList<String>();
             }
             else {
+                /*
                 setLink("https://ru.wikiquote.org/wiki/" + searchMessage.trim());
                 doc = Jsoup.connect(link).get();
                 similarTopics = GoogleSender.getSimilarTopics(searchMessage, false);
+                */
+                doc = GoogleSender.googleIt(searchMessage.trim(),false);
+                setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
+                similarTopics = GoogleSender.getSimilarTopics();
             }
 
 
         }
         catch (HttpStatusException e) { // если 500, 404 ошибки, то
             e.printStackTrace(); // печатаем трейс
-            // в результирующий лист добавляем текст
-            if (e.toString().matches(".*Status=404.*") && !searchMessage.equals("/random")){
-                errorName = "404";
-                try {
-                    setLink("https://ru.wikiquote.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, false));
-                    doc = Jsoup.connect(link).get();
-                    similarTopics = GoogleSender.getSimilarTopics(searchMessage, false);
-                } catch (Exception e1) {
-                    setLink("");
-                    isError = true;
-                    // выходим из метода
-                    text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
-                            "Попробуйте поискать информацию в другом режиме поиска.");
-                    e1.printStackTrace();
-                    return text;
-                }
-            } else {
-                setLink("");
-                text.add("У меня не получилось найти что-либо по этому запросу.\n" +
-                        "Попробуйте поискать информацию в другом режиме поиска.");
-                isError = true;
-                // выходим из метода
-                return text;
-            }
+
+            setLink("");
+            isError = true;
+            // выходим из метода
+            text.add("К сожалению, по вашим ключевым словам ничего найти не удалось.\n" +
+                    "Попробуйте поискать информацию в другом режиме поиска.");
+
+            return text;
         }
-        catch (IOException e) { // если любая другая ошибка
+        catch (Exception e){
             setLink("");
             e.printStackTrace();
-            text.add("Прошу прощения, но с интернет соединением что-то не так. Пожалуйста, попробуйте позже.");
+            text.add("По вашему запросу ничего не найдено.");
             isError = true;
             return text;
         }
@@ -299,7 +277,7 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","infobox sisterproject noprint wikipedia-box").remove(); // удаляем таблички
 
         // забираем заголовок
-        TOPIC_NAME = tags.getElementsByTag("h1").text();
+        TOPIC_NAME = GoogleSender.getTopicName();
         // удаляем заголовок
         tags.getElementsByTag("h1").remove();
 
