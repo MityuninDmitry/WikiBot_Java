@@ -113,18 +113,15 @@ public class User implements Serializable{
     }
     public void setToc(Map<String, String> toc){
         this.toc = toc;
-        if (this.toc == null || this.toc.size() == 1) {
-            setNeedToShowToc(false);
-        } else {
-            setNeedToShowToc(true);
-            for (Map.Entry<String,String> toc_item: this.toc.entrySet()){
-                listOfCases.add(toc_item.getValue());
-            }
-        }
-
     }
     public Map<String, String> getToc() {
         return toc;
+    }
+    public void setListOfCases(Map<String,String> toc){
+        listOfCases = new ArrayList<String>();
+        if (toc != null){
+            listOfCases.addAll(toc.values());
+        }
     }
     public void setListOfCases(ArrayList<String> listOfCases) {
         this.listOfCases = listOfCases;
@@ -139,8 +136,7 @@ public class User implements Serializable{
         return topic_name;
     }
     public void setNeedToShowToc(boolean needToShowToc){
-        if (toc != null)
-            this.isNeedShowToc = needToShowToc;
+        this.isNeedShowToc = needToShowToc;
     }
     public boolean isNeedShowToc(){
         return isNeedShowToc;
@@ -159,25 +155,15 @@ public class User implements Serializable{
     }
 
     public void incrementIndex(){
-        // если список параграфов пустой, то индекс всегда ноль
-        if (listOfParagraphs == null ) {
-            indexOfParagraph = 0;
-            setButtonsMode(BUTTONS_MODE.NONE);
+        if (indexOfParagraph < listOfParagraphs.size() - 1) {
+            indexOfParagraph++;
         }
-        else // иначе если еще не достигли предела списка параграфов, то увеличиваем индекс
-            if (indexOfParagraph < listOfParagraphs.size() - 1) {
-                indexOfParagraph++;
-            }
-            else {
-                indexOfParagraph = listOfParagraphs.size() - 1;
+        else {
+            indexOfParagraph = listOfParagraphs.size() - 1;
 
-            }
+        }
     }
     public void decrementIndex(){
-        // если список параграфов пустой или индекс стал меньше 0, то обнуляем его
-        if (listOfParagraphs == null){
-            setButtonsMode(BUTTONS_MODE.NONE);
-        }
         if (indexOfParagraph <= 0) indexOfParagraph = 0;
         else // иначе уменьшаем индекс
             indexOfParagraph--;
@@ -203,7 +189,6 @@ public class User implements Serializable{
     }
     // при установке нового последнего сообщения пользователя, сразу же обнволяем список параграфов для вывода
     public void setLastSearchMessageAndUpdateListOfParagraphs(String lastSearchMessage) {
-        setNeedToShowToc(false);
         // если сообщение null, то пользователь послал документ или картинку
         if (lastSearchMessage == null) lastSearchMessage = "";
         // если пользователь ввел старт или помощь, то соответствующее сообщение
@@ -219,10 +204,11 @@ public class User implements Serializable{
             setListOfParagraphs(text);
             // обнуляем меню
             setToc(null);
-
+            setListOfCases(getToc());
             setTopic_name(null);
             setLastWebLink(null);
             setButtonsMode(BUTTONS_MODE.START);
+            setNeedToShowToc(false);
 
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.INSTRUCTION)){
@@ -251,6 +237,7 @@ public class User implements Serializable{
             setListOfParagraphs(text);
             // обнуляем меню
             setToc(null);
+            setListOfCases(getToc());
             //
             /* если строку ниже раскоментировать, то будет баг непонятно почему:
             * сменить режим, инструкция, начать пользоваться ботом, выбрать режим, нажать на "случайная статья"
@@ -260,6 +247,7 @@ public class User implements Serializable{
             setLastWebLink(null);
 
             setButtonsMode(BUTTONS_MODE.INSTRUCTIONS);
+            setNeedToShowToc(false);
 
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.TOPICS)){
@@ -271,10 +259,11 @@ public class User implements Serializable{
             setListOfParagraphs(text);
             // обнуляем меню
             setToc(null);
-
+            setListOfCases(getToc());
             setButtonsMode(BUTTONS_MODE.SEARCH_MODE);
 
             setTopicMode(true);
+            setNeedToShowToc(false);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.QUOTES)){
             setLastSearchMessage(null);
@@ -289,10 +278,11 @@ public class User implements Serializable{
             setListOfParagraphs(text);
 
             setToc(null);
-
+            setListOfCases(getToc());
             setButtonsMode(BUTTONS_MODE.SEARCH_MODE);
 
             setTopicMode(false);
+            setNeedToShowToc(false);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.RANDOM)){
             // случай, когда пользователь нажал показать случайную статью
@@ -306,7 +296,7 @@ public class User implements Serializable{
             }
 
             setToc(httpModule.getTocList());
-
+            setListOfCases(getToc());
             setTopic_name(httpModule.getTOPIC_NAME());
 
             setButtonsMode(BUTTONS_MODE.DEFAULT);
@@ -316,7 +306,7 @@ public class User implements Serializable{
 
             setLastWebLink(httpModule.getLink());
 
-
+            setNeedToShowToc(true);
 
         }
         else if (lastSearchMessage.equals("")){
@@ -324,8 +314,10 @@ public class User implements Serializable{
             setLastSearchMessage(null);
             setListOfParagraphs(null); // список параграфов обнуляем
             setToc(null);
+            setListOfCases(getToc());
             setTopic_name(null);
             setButtonsMode(BUTTONS_MODE.NONE);
+            setNeedToShowToc(false);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.NEXT)){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
@@ -347,6 +339,7 @@ public class User implements Serializable{
         else if (checkContainsListOfCases(lastSearchMessage)){ // если страница меню совпадает с текущей менюшкой
             setIndexOfParagraph(Integer.parseInt(lastSearchMessage));
             setButtonsMode(BUTTONS_MODE.DEFAULT);
+            setNeedToShowToc(false);
         }
         else {
             // если новое сообщение ок, то ищем по этому сообщению статью в вики
@@ -364,6 +357,7 @@ public class User implements Serializable{
 
             // устанавливаем меню
             setToc(httpModule.getTocList());
+            setListOfCases(getToc());
             setTopic_name(httpModule.getTOPIC_NAME());
             setLastWebLink(httpModule.getLink());
 
@@ -371,6 +365,7 @@ public class User implements Serializable{
             if (httpModule.isError()){
                 setButtonsMode(BUTTONS_MODE.NONE);
             }
+            setNeedToShowToc(true);
 
         }
 
@@ -380,7 +375,6 @@ public class User implements Serializable{
         } else {
             wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),getModeButtons());
         }
-
 
         // запуск новой нити для автоматической отправки случайной статьи по истечении таймера
         activateNewTimerThread();

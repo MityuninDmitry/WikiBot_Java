@@ -144,20 +144,20 @@ public class WikiBot extends TelegramLongPollingBot {
             List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
             List<InlineKeyboardButton> listNavigation = new ArrayList<InlineKeyboardButton>();
 
-            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
-            inlineKeyboardButton.setText("⬅️");
-            inlineKeyboardButton.setCallbackData(RESERVED_ANSWER.PREV);
-            InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-            inlineKeyboardButton2.setText("➡️");
-            inlineKeyboardButton2.setCallbackData(RESERVED_ANSWER.NEXT);
+            InlineKeyboardButton buttonBack = new InlineKeyboardButton();
+            buttonBack.setText("⬅️");
+            buttonBack.setCallbackData(RESERVED_ANSWER.PREV);
+            InlineKeyboardButton buttonNext = new InlineKeyboardButton();
+            buttonNext.setText("➡️");
+            buttonNext.setCallbackData(RESERVED_ANSWER.NEXT);
 
             InlineKeyboardButton buttonMenu = new InlineKeyboardButton();
             buttonMenu.setText("\uD83D\uDCD7");
             buttonMenu.setCallbackData(RESERVED_ANSWER.SHOW_MENU);
 
-            listNavigation.add(inlineKeyboardButton);
+            listNavigation.add(buttonBack);
             listNavigation.add(buttonMenu);
-            listNavigation.add(inlineKeyboardButton2);
+            listNavigation.add(buttonNext);
 
             lists.add(listNavigation);
 
@@ -239,9 +239,6 @@ public class WikiBot extends TelegramLongPollingBot {
             list.add(buttonLink);
             lists.add(list);
         }
-
-
-
 
         list = new ArrayList<InlineKeyboardButton>();
         InlineKeyboardButton buttonHelp = new InlineKeyboardButton();

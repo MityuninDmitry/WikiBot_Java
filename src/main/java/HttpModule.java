@@ -15,9 +15,6 @@ public class HttpModule {
     private boolean isError = false;
     private String errorName;
     private String link;
-    public String getLink() {
-        return link;
-    }
     public void setLink(String link) {
 
         try {
@@ -27,6 +24,10 @@ public class HttpModule {
         }
 
     }
+    public String getLink() {
+        return link;
+    }
+
     public boolean isError(){
         return isError;
     }
