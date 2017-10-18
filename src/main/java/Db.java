@@ -7,7 +7,7 @@ public class Db {
     private static String fileNameDb;
     private static String path = "C:/Users/Ирина/IdeaProjects/WikiBot/";
     private static String table_Users = "Users";
-    private static String table_UserSettings = "UserSettings";
+    private static String table_UserStates = "UserStates";
     private static Connection conn = null;
     // запрос на создание таблицы Users с данными пользователей
     private static String CREATE_USERS_TABLE_STATEMENT = "CREATE TABLE IF NOT EXISTS " + table_Users + " (\n"
@@ -15,14 +15,14 @@ public class Db {
             + "	UserId text ,\n"
             + "	firstName text ,\n"
             + "	lastName text ,\n"
-            + "	userName text \n"
+            + "	userName text ,\n"
+            + "	lastChatId text \n"
             + ");";
     /** запрос на создание таблицы UsersSettings с данными о настройках пользователей
      *  Поле UsersSettings.id_in_table_Users ссылается на поле Users.id */
-    private static String CREATE_USER_SETTINGS_TABLE_STATEMENT = "CREATE TABLE IF NOT EXISTS " + table_UserSettings + " (\n"
+    private static String CREATE_USER_SETTINGS_TABLE_STATEMENT = "CREATE TABLE IF NOT EXISTS " + table_UserStates + " (\n"
             + "	id integer PRIMARY KEY,\n"
             + "	id_in_table_Users integer ,\n"
-            + "	lastChatId text ,\n"
             + "	lastSearchMessage text ,\n"
             + "	indexOfParagraph text ,\n"
             + "	listOfParagraphs text ,\n"
@@ -41,14 +41,14 @@ public class Db {
             "UserId," +
             "firstName," +
             "lastName," +
-            "userName) VALUES(?,?,?,?)";
+            "userName," +
+            "lastChatId) VALUES(?,?,?,?,?)";
     /** Запрос на вставку новых данных в таблицу UserSettings
      * При этом данные поля UserSettings.id_in_table_Users заполняются данными из соответствующей записи
      * в поля Users.UserId
      * */
-    private static String INSERT_SQL_STATEMENT_INTO_USERS_SETTINGS = "INSERT INTO " + table_UserSettings + "(" +
+    private static String INSERT_SQL_STATEMENT_INTO_USERS_SETTINGS = "INSERT INTO " + table_UserStates + "(" +
             "id_in_table_Users," +
-            "lastChatId," +
             "lastSearchMessage," +
             "indexOfParagraph," +
             "listOfParagraphs," +
@@ -59,18 +59,18 @@ public class Db {
             "isNeedShowToc," +
             "isTopicsMode," +
             "lastWebLink)" +
-            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?,?) ";
+            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?) ";
     /** Обновление таблицы Users */
     private static String UPDATE_SQL_STATEMENT_IN_USERS = "UPDATE " + table_Users + " "
             + "SET UserId = ? , " +
             "firstName = ? , " +
             "lastName = ?, " +
-            "userName = ?" +
+            "userName = ?," +
+            "lastChatId = ?" +
             "WHERE id = ?";
     /** Обновление таблицы UserSettings */
-    private static String UPDATE_SQL_STATEMENT_IN_USER_SETTINGS = "UPDATE " + table_UserSettings + " "
+    private static String UPDATE_SQL_STATEMENT_IN_USER_SETTINGS = "UPDATE " + table_UserStates + " "
             + "SET " +
-            "lastChatId = ? , " +
             "lastSearchMessage = ? , " +
             "indexOfParagraph = ? , " +
             "listOfParagraphs = ?, " +
@@ -81,7 +81,7 @@ public class Db {
             "isNeedShowToc = ?, " +
             "isTopicsMode = ?," +
             "lastWebLink = ?" +
-            "WHERE UserSettings.id_in_table_Users = ?";
+            "WHERE UserStates.id_in_table_Users = ?";
     // ID пользователей
     private static ArrayList<Integer> loadedUsersIdsList = new ArrayList<Integer>();
     // Возвращаем список ID пользователей
@@ -140,8 +140,8 @@ public class Db {
         ArrayList<User> users = new ArrayList<User>();
         // запрос в БД для получения сразу всех полей
         String sql = "SELECT * " +
-                "FROM Users, UserSettings " +
-                "WHERE Users.id = UserSettings.id_in_table_Users";
+                "FROM Users, UserStates " +
+                "WHERE Users.id = UserStates.id_in_table_Users";
         try {
             // выполняем запрос
             Statement stmt  = conn.createStatement();
@@ -155,8 +155,8 @@ public class Db {
                 newUser.setFirstName(rs.getString("firstName"));
                 newUser.setLastName(rs.getString("lastName"));
                 newUser.setUserName(rs.getString("userName"));
-
                 newUser.setLastChatId(Long.parseLong(rs.getString("lastChatId")));
+
                 newUser.setListOfParagraphs(loadListOfParagraphs(rs.getString("listOfParagraphs")));
                 newUser.setIndexOfParagraph(Integer.parseInt(rs.getString("indexOfParagraph")));
 
@@ -211,26 +211,26 @@ public class Db {
             pstmt.setString(2, user.getFirstName());
             pstmt.setString(3, user.getLastName());
             pstmt.setString(4, user.getUserName());
+            pstmt.setString(5, user.getLastChatId() + "");
             // по id понимаем, какую запись обновлять
-            pstmt.setInt(5, id);
+            pstmt.setInt(6, id);
             // выполняем запрос
             pstmt.executeUpdate();
             // обновление в таблице UserSettings
             pstmt = conn.prepareStatement(UPDATE_SQL_STATEMENT_IN_USER_SETTINGS);
             // список полей для обновления
-            pstmt.setString(1, user.getLastChatId()+"");
-            pstmt.setString(2, user.getLastSearchMessage());
-            pstmt.setString(3, user.getIndexOfParagraph() + "");
-            pstmt.setString(4, getPreparedDataListOfParagraphs(user));
-            pstmt.setString(5, user.getModeButtons());
-            pstmt.setString(6, getPreparedDataToc(user));
-            pstmt.setString(7, getPreparedDataListOfCases(user));
-            pstmt.setString(8, user.getTopic_name());
-            pstmt.setString(9, user.isNeedShowToc()+"");
-            pstmt.setString(10, user.getTopicMode() + "");
-            pstmt.setString(11, user.getLastWebLink());
+            pstmt.setString(1, user.getLastSearchMessage());
+            pstmt.setString(2, user.getIndexOfParagraph() + "");
+            pstmt.setString(3, getPreparedDataListOfParagraphs(user));
+            pstmt.setString(4, user.getModeButtons());
+            pstmt.setString(5, getPreparedDataToc(user));
+            pstmt.setString(6, getPreparedDataListOfCases(user));
+            pstmt.setString(7, user.getTopic_name());
+            pstmt.setString(8, user.isNeedShowToc()+"");
+            pstmt.setString(9, user.getTopicMode() + "");
+            pstmt.setString(10, user.getLastWebLink());
             // по id понимаем, какую запись обновлять
-            pstmt.setInt(12, id);
+            pstmt.setInt(11, id);
             // выполняем апдейт
             pstmt.executeUpdate();
 
@@ -286,6 +286,7 @@ public class Db {
             pstmt.setString(2, user.getFirstName());
             pstmt.setString(3, user.getLastName());
             pstmt.setString(4, user.getUserName());
+            pstmt.setString(5, user.getLastChatId() + "");
             // выполняем запрос
             pstmt.executeUpdate();
 
@@ -293,17 +294,16 @@ public class Db {
             pstmt = conn.prepareStatement(INSERT_SQL_STATEMENT_INTO_USERS_SETTINGS);
             // данные для вставки
             pstmt.setString(1, user.getUserId() + "");
-            pstmt.setString(2, user.getLastChatId()+"");
-            pstmt.setString(3, user.getLastSearchMessage());
-            pstmt.setString(4, user.getIndexOfParagraph() + "");
-            pstmt.setString(5, getPreparedDataListOfParagraphs(user));
-            pstmt.setString(6, user.getModeButtons());
-            pstmt.setString(7, getPreparedDataToc(user));
-            pstmt.setString(8, getPreparedDataListOfCases(user));
-            pstmt.setString(9, user.getTopic_name());
-            pstmt.setString(10, user.isNeedShowToc()+"");
-            pstmt.setString(11, user.getTopicMode() + "");
-            pstmt.setString(12, user.getLastWebLink());
+            pstmt.setString(2, user.getLastSearchMessage());
+            pstmt.setString(3, user.getIndexOfParagraph() + "");
+            pstmt.setString(4, getPreparedDataListOfParagraphs(user));
+            pstmt.setString(5, user.getModeButtons());
+            pstmt.setString(6, getPreparedDataToc(user));
+            pstmt.setString(7, getPreparedDataListOfCases(user));
+            pstmt.setString(8, user.getTopic_name());
+            pstmt.setString(9, user.isNeedShowToc()+"");
+            pstmt.setString(10, user.getTopicMode() + "");
+            pstmt.setString(11, user.getLastWebLink());
             // выполняем запрос
             pstmt.executeUpdate();
             //System.out.println("=== User was inserted ===");

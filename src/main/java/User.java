@@ -7,35 +7,13 @@ public class User implements Serializable{
     public static List<User> usersList = new ArrayList<User>();
     private static ArrayList<Integer> usersIdsList = new ArrayList<Integer>(); // список известных ИД пользователей
     private Integer UserId; // ИД пользователя
-    private Long lastChatId; // чат ИД пользователя
-    private String lastSearchMessage; // последнее сообщение, которое он искал
-    private int indexOfParagraph = 0; // номер параграфа
-    private ArrayList<String> listOfParagraphs; // список параграфов
-    private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
-    private String modeOfButtons; // нужны кнопки при отправке сообщения поьзователю или нет
-    private Map<String, String> toc; // меню статьи
-    private ArrayList<String> listOfCases = new ArrayList<String>();
-    private String topic_name; // название статьи в Википедии
-    private String topic_random_name; // название случайной статьи в Википедии(задается в отдельной нити)
-    private boolean isNeedShowToc; // надо ли показывать меню
-    private boolean isTopicsMode = true; // true - Topics, false - Quotes
-    private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
-    private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
     private String firstName;
     private String lastName;
     private String userName;
-    private String lastWebLink;
-    public void setLastSearchMessage(String lastSearchMessage){
-        this.lastSearchMessage = lastSearchMessage;
-    }
-    public String getLastWebLink() {
-        return lastWebLink;
-    }
-    public void setLastWebLink(String lastWebLink) {
-        this.lastWebLink = lastWebLink;
-    }
-    public void setListOfCases(ArrayList<String> listOfCases) {
-        this.listOfCases = listOfCases;
+    private Long lastChatId; // чат ИД пользователя
+
+    public Integer getUserId() {
+        return UserId;
     }
     public String getFirstName() {
         return firstName;
@@ -55,6 +33,43 @@ public class User implements Serializable{
     public void setUserName(String userName) {
         this.userName = userName;
     }
+    public Long getLastChatId() {
+        return lastChatId;
+    }
+    public void setLastChatId(Long lastChatId) {
+        this.lastChatId = lastChatId;
+    }
+
+    private String lastSearchMessage; // последнее сообщение, которое он искал
+    private int indexOfParagraph = 0; // номер параграфа
+    private ArrayList<String> listOfParagraphs; // список параграфов
+    private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
+    private String modeOfButtons; // нужны кнопки при отправке сообщения поьзователю или нет
+    private Map<String, String> toc; // меню статьи
+    private ArrayList<String> listOfCases = new ArrayList<String>();
+    private String topic_name; // название статьи в Википедии
+    private String topic_random_name; // название случайной статьи в Википедии(задается в отдельной нити)
+    private boolean isNeedShowToc; // надо ли показывать меню
+    private boolean isTopicsMode = true; // true - Topics, false - Quotes
+    private String lastWebLink;
+
+    private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
+    private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
+
+
+    public void setLastSearchMessage(String lastSearchMessage){
+        this.lastSearchMessage = lastSearchMessage;
+    }
+    public String getLastWebLink() {
+        return lastWebLink;
+    }
+    public void setLastWebLink(String lastWebLink) {
+        this.lastWebLink = lastWebLink;
+    }
+    public void setListOfCases(ArrayList<String> listOfCases) {
+        this.listOfCases = listOfCases;
+    }
+
     public Map<String, String> getToc() {
         return toc;
     }
@@ -145,46 +160,6 @@ public class User implements Serializable{
         Db.close();
         System.out.println("Users was loaded");
     }
-    // метод сохраняет список пользователей
-    public static void saveUsers(){
-        FileOutputStream fos;
-        ObjectOutputStream out;
-        try{
-            // создаем файлик для сохранения пользователей
-            File file = new File("src/main/resources/SavedUsers.dat");
-            // открываем потоки сохранения объекта
-            fos = new FileOutputStream(file);
-            out = new ObjectOutputStream(fos);
-            // сохраняем объекты
-            out.writeObject(usersList);
-            out.writeObject(usersIdsList);
-            // закрываем поток записи
-            out.close();
-        } catch (IOException e){
-            e.printStackTrace();
-        }
-    }
-    // метод загружает известных пользователей из файла
-    public static void loadUsers(){
-        FileInputStream fis;
-        ObjectInputStream in;
-        try {
-            fis = new FileInputStream("src/main/resources/SavedUsers.dat");
-            in = new ObjectInputStream(fis);
-            usersList = (ArrayList<User>) in.readObject();
-            usersIdsList = (ArrayList<Integer>) in.readObject();
-            in.close();
-            System.out.println("Users was loaded");
-        } catch (IOException e){
-            // e.printStackTrace();
-            System.out.println("There is no file for loading users. Or another error.");
-        } catch (ClassNotFoundException e){
-            e.printStackTrace();
-        }
-        for (int i = 0; i < usersList.size(); i++) {
-            usersList.get(i).activateNewTimerThread();
-        }
-    }
     // метод возвращает пользователя из списка пользователей по его ИД
     public static User getCurrentUserForWork(Integer userId){
         // объявляем индекс
@@ -215,12 +190,7 @@ public class User implements Serializable{
         autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
 
     }
-    public Long getLastChatId() {
-        return lastChatId;
-    }
-    public void setLastChatId(Long lastChatId) {
-        this.lastChatId = lastChatId;
-    }
+
     public String getModeButtons() {
         return modeOfButtons;
     }
@@ -305,6 +275,14 @@ public class User implements Serializable{
     public String getLastSearchMessage() {
         return lastSearchMessage;
     }
+    public boolean checkContainsListOfCases(String lastSearchMessage){
+        try {
+            return listOfCases.contains(lastSearchMessage);
+
+        } catch (Exception e){
+            return false;
+        }
+    }
     // при установке нового последнего сообщения пользователя, сразу же обнволяем список параграфов для вывода
     public void setLastSearchMessageAndUpdateListOfParagraphs(String lastSearchMessage) {
         setNeedToShowToc(false);
@@ -324,6 +302,8 @@ public class User implements Serializable{
             // обнуляем меню
             setToc(null);
 
+            setTopic_name(null);
+            setLastWebLink(null);
             setButtonsMode(BUTTONS_MODE.START);
 
         }
@@ -353,6 +333,13 @@ public class User implements Serializable{
             setListOfParagraphs(text);
             // обнуляем меню
             setToc(null);
+            //
+            /* если строку ниже раскоментировать, то будет баг непонятно почему:
+            * сменить режим, инструкция, начать пользоваться ботом, выбрать режим, нажать на "случайная статья"
+            * и будет ошибка */
+            //setListOfCases(null);
+            setTopic_name(null);
+            setLastWebLink(null);
 
             setButtonsMode(BUTTONS_MODE.INSTRUCTIONS);
 
@@ -439,7 +426,7 @@ public class User implements Serializable{
             image.add("https://c1.staticflickr.com/7/6107/6381966401_032df5fe1e_b.jpg");
             setListOfParagraphs(image);
         }
-        else if (listOfCases.contains(lastSearchMessage)){ // если страница меню совпадает с текущей менюшкой
+        else if (checkContainsListOfCases(lastSearchMessage)){ // если страница меню совпадает с текущей менюшкой
             setIndexOfParagraph(Integer.parseInt(lastSearchMessage));
             setButtonsMode(BUTTONS_MODE.DEFAULT);
         }
@@ -480,9 +467,7 @@ public class User implements Serializable{
         // запуск новой нити для автоматической отправки случайной статьи по истечении таймера
         activateNewTimerThread();
     }
-    public Integer getUserId() {
-        return UserId;
-    }
+
 
 
 
