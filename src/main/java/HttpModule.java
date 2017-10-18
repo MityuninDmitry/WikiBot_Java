@@ -15,6 +15,12 @@ public class HttpModule {
     private boolean isError = false;
     private String errorName;
     private String link;
+    private ArrayList<String> similarTopics = new ArrayList<String>();
+
+    public ArrayList<String> getSimilarTopics() {
+        return similarTopics;
+    }
+
     public void setLink(String link) {
 
         try {
@@ -52,10 +58,12 @@ public class HttpModule {
 
                 doc = Jsoup.connect("https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
+                similarTopics = new ArrayList<String>();
             }
             else {
                 setLink("https://ru.wikipedia.org/wiki/" + searchMessage.trim());
                 doc = Jsoup.connect(link).get();
+                similarTopics = GoogleSender.getSimilarTopics(searchMessage, true);
             }
 
 
@@ -68,6 +76,7 @@ public class HttpModule {
                 try {
                     setLink("https://ru.wikipedia.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, true));
                     doc = Jsoup.connect(getLink()).get();
+                    similarTopics = GoogleSender.getSimilarTopics(searchMessage, true);
                 } catch (Exception e1) {
                     setLink("");
                     isError = true;
@@ -229,11 +238,12 @@ public class HttpModule {
             if (searchMessage.equals("/random")){
                 doc = Jsoup.connect("https://ru.wikiquote.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
+                similarTopics = new ArrayList<String>();
             }
             else {
                 setLink("https://ru.wikiquote.org/wiki/" + searchMessage.trim());
                 doc = Jsoup.connect(link).get();
-
+                similarTopics = GoogleSender.getSimilarTopics(searchMessage, false);
             }
 
 
@@ -246,6 +256,7 @@ public class HttpModule {
                 try {
                     setLink("https://ru.wikiquote.org/wiki/" + GoogleSender.getSupposedRequest(searchMessage, false));
                     doc = Jsoup.connect(link).get();
+                    similarTopics = GoogleSender.getSimilarTopics(searchMessage, false);
                 } catch (Exception e1) {
                     setLink("");
                     isError = true;

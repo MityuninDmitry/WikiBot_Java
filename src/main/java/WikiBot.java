@@ -88,7 +88,7 @@ public class WikiBot extends TelegramLongPollingBot {
         return BotsSecretData.TOKEN_OF_BOT;
     }
     // метод, который посылает сообщение в соответствующий чат с соотвтетсвующим сообщением и добавляем две кнопки
-    public void mySendMessage(Long chatId, String messageForReply, String modeOfButtons){
+    public void mySendMessage(Long chatId, String messageForReply, String modeOfButtons, ArrayList<String> similarTopics){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(messageForReply);
@@ -198,6 +198,29 @@ public class WikiBot extends TelegramLongPollingBot {
 
             message.setReplyMarkup(inlineKeyboardMarkup);
         }
+        else if (modeOfButtons.equals(BUTTONS_MODE.SIMILAR_TOPICS)){
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> lists = new ArrayList<List<InlineKeyboardButton>>();
+            List<InlineKeyboardButton> list;
+            for (String topicName: similarTopics){
+
+                list = new ArrayList<InlineKeyboardButton>();
+                InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+                inlineKeyboardButton.setText(topicName);
+
+                String topic = topicName;
+                if (topic.length() > 30){
+                    topic = topic.substring(0,30);
+                }
+                inlineKeyboardButton.setCallbackData(topic);
+                list.add(inlineKeyboardButton);
+                lists.add(list);
+            }
+            inlineKeyboardMarkup.setKeyboard(lists);
+
+            message.setReplyMarkup(inlineKeyboardMarkup);
+
+        }
         // посылаем сообщение
         try {
             sendApiMethod(message);
@@ -206,7 +229,7 @@ public class WikiBot extends TelegramLongPollingBot {
         }
     }
     // метод посылает меню пользователю
-    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName, boolean isTopic, String link){
+    public void mySendTocMessage(Long chatId, Map<String, String> toc, String topicName, boolean isTopic, String link, boolean needButtonSimilarTopic){
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         String modeText;
@@ -239,6 +262,15 @@ public class WikiBot extends TelegramLongPollingBot {
             list.add(buttonLink);
             lists.add(list);
         }
+        if (needButtonSimilarTopic){
+            list = new ArrayList<InlineKeyboardButton>();
+            InlineKeyboardButton buttonSimilarTopics = new InlineKeyboardButton();
+            buttonSimilarTopics.setText("\uD83D\uDD0D Похожие статьи");
+            buttonSimilarTopics.setCallbackData(RESERVED_ANSWER.SIMILAR_TOPICS);
+            list.add(buttonSimilarTopics);
+            lists.add(list);
+        }
+
 
         list = new ArrayList<InlineKeyboardButton>();
         InlineKeyboardButton buttonHelp = new InlineKeyboardButton();

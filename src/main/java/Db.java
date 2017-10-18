@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ public class Db {
             + "	isNeedShowToc text ,\n"
             + "	isTopicsMode text, \n"
             + "	lastWebLink text ,\n"
+            + "	similarTopics text ,\n"
             + "FOREIGN KEY (id_in_table_Users) REFERENCES Users(id)"
             + ");";
     /** Запрос на вставку новых данных в таблицу Users
@@ -58,8 +60,9 @@ public class Db {
             "topic_name," +
             "isNeedShowToc," +
             "isTopicsMode," +
-            "lastWebLink)" +
-            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?) ";
+            "lastWebLink," +
+            "similarTopics)" +
+            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?,?) ";
     /** Обновление таблицы Users */
     private static String UPDATE_SQL_STATEMENT_IN_USERS = "UPDATE " + table_Users + " "
             + "SET UserId = ? , " +
@@ -80,7 +83,8 @@ public class Db {
             "topic_name = ? , " +
             "isNeedShowToc = ?, " +
             "isTopicsMode = ?," +
-            "lastWebLink = ?" +
+            "lastWebLink = ?," +
+            "similarTopics = ?" +
             "WHERE UserStates.id_in_table_Users = ?";
     // ID пользователей
     private static ArrayList<Integer> loadedUsersIdsList = new ArrayList<Integer>();
@@ -106,6 +110,15 @@ public class Db {
 
     }
     // Загружаем данные из таблицы и преобразуем в нужный формат
+    public static ArrayList<String> loadSimilarTopics(String stringList){
+        ArrayList<String> result = new ArrayList<String>();
+        if (stringList.equals("")) return result;
+        String[] mas = stringList.split("parse");
+        for (String part: mas){
+            result.add(part);
+        }
+        return result;
+    }
     public static ArrayList<String> loadListOfParagraphs(String stringList){
         ArrayList<String> result = new ArrayList<String>();
         if (stringList.equals("")) return result;
@@ -167,6 +180,8 @@ public class Db {
                 newUser.setNeedToShowToc(Boolean.parseBoolean(rs.getString("isNeedShowToc")));
                 newUser.setTopicMode(Boolean.parseBoolean(rs.getString("isTopicsMode")));
                 newUser.setLastWebLink(rs.getString("lastWebLink"));
+
+                newUser.setSimilarTopics(loadSimilarTopics(rs.getString("similarTopics")));
                 // добавляем в список ID пользователя
                 loadedUsersIdsList.add(newUser.getUserId());
                 // добавляем пользователя в список пользователей
@@ -229,8 +244,9 @@ public class Db {
             pstmt.setString(8, user.isNeedShowToc()+"");
             pstmt.setString(9, user.getTopicMode() + "");
             pstmt.setString(10, user.getLastWebLink());
+            pstmt.setString(11, getPreparedDataSimilarTopics(user));
             // по id понимаем, какую запись обновлять
-            pstmt.setInt(11, id);
+            pstmt.setInt(12, id);
             // выполняем апдейт
             pstmt.executeUpdate();
 
@@ -240,6 +256,18 @@ public class Db {
         //System.out.println("=== User was updated ===");
     }
     // готовим данные к записи в БД - преобразуем их в строки
+    public static String getPreparedDataSimilarTopics(User user){
+        // преобразуем данные в строку
+        // чтобы декодировать данные, надо их считать и разделить по слову parse
+        if (user.getSimilarTopics() == null){
+            return "";
+        }
+        StringBuilder listOfSimilarTopicsString = new StringBuilder();
+        for (String topic: user.getSimilarTopics()){
+            listOfSimilarTopicsString.append(topic + "parse");
+        }
+        return listOfSimilarTopicsString.toString();
+    }
     public static String getPreparedDataListOfParagraphs(User user){
         // преобразуем данные в строку
         // чтобы декодировать данные, надо их считать и разделить по слову parse
@@ -304,6 +332,7 @@ public class Db {
             pstmt.setString(9, user.isNeedShowToc()+"");
             pstmt.setString(10, user.getTopicMode() + "");
             pstmt.setString(11, user.getLastWebLink());
+            pstmt.setString(12, getPreparedDataSimilarTopics(user));
             // выполняем запрос
             pstmt.executeUpdate();
             //System.out.println("=== User was inserted ===");

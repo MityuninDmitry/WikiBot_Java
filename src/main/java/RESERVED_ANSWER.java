@@ -7,4 +7,5 @@ public class RESERVED_ANSWER {
     public static final String TOPICS = "/topics"; // выбрать режим поиска статей
     public static final String QUOTES = "/quotes"; // выбрать режим поиска статей
     public static final String INSTRUCTION = "/instruction"; // выбрать режим поиска статей
+    public static final String SIMILAR_TOPICS = "/similar"; // выбрать режим поиска статей
 }

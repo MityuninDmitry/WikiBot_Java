@@ -80,6 +80,7 @@ public class User implements Serializable{
     private boolean isNeedShowToc; // надо ли показывать меню
     private boolean isTopicMode = true; // true - Topics, false - Quotes
     private String lastWebLink;
+    private ArrayList<String> similarTopics = new ArrayList<String>();
 
     public void setLastSearchMessage(String lastSearchMessage){
         this.lastSearchMessage = lastSearchMessage;
@@ -153,6 +154,15 @@ public class User implements Serializable{
     public String getLastWebLink() {
         return lastWebLink;
     }
+    public void setSimilarTopics(ArrayList<String> similarTopics) {
+        if (similarTopics == null) this.similarTopics = new ArrayList<String>();
+        else {
+            this.similarTopics = similarTopics;
+        }
+    }
+    public ArrayList<String> getSimilarTopics() {
+        return similarTopics;
+    }
 
     public void incrementIndex(){
         if (indexOfParagraph < listOfParagraphs.size() - 1) {
@@ -178,6 +188,13 @@ public class User implements Serializable{
         } else  {
             return listOfParagraphs.get(indexOfParagraph);
         }
+    }
+    public boolean needToShowSimilarTopics(){
+        boolean needShowButtonSimilarTopic = false;
+        if (getSimilarTopics().size() > 0){
+            needShowButtonSimilarTopic = true;
+        }
+        return needShowButtonSimilarTopic;
     }
     public boolean checkContainsListOfCases(String lastSearchMessage){
         try {
@@ -209,6 +226,7 @@ public class User implements Serializable{
             setLastWebLink(null);
             setButtonsMode(BUTTONS_MODE.START);
             setNeedToShowToc(false);
+            setSimilarTopics(null);
 
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.INSTRUCTION)){
@@ -248,6 +266,7 @@ public class User implements Serializable{
 
             setButtonsMode(BUTTONS_MODE.INSTRUCTIONS);
             setNeedToShowToc(false);
+            setSimilarTopics(null);
 
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.TOPICS)){
@@ -264,6 +283,7 @@ public class User implements Serializable{
 
             setTopicMode(true);
             setNeedToShowToc(false);
+            setSimilarTopics(null);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.QUOTES)){
             setLastSearchMessage(null);
@@ -283,6 +303,7 @@ public class User implements Serializable{
 
             setTopicMode(false);
             setNeedToShowToc(false);
+            setSimilarTopics(null);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.RANDOM)){
             // случай, когда пользователь нажал показать случайную статью
@@ -307,7 +328,23 @@ public class User implements Serializable{
             setLastWebLink(httpModule.getLink());
 
             setNeedToShowToc(true);
+            setSimilarTopics(null);
 
+        }
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.SIMILAR_TOPICS)){
+            // если пользователь нажал кнопку посмотреть похожие статьи,
+
+            ArrayList<String> text = new ArrayList<String>();
+            text.add("Ниже представлен список похожих статей.\n" +
+                    "Выберете статью для просмотра:");
+            setListOfParagraphs(text);
+            setToc(null);
+            setListOfCases(getToc());
+            setTopic_name(null);
+            setButtonsMode(BUTTONS_MODE.SIMILAR_TOPICS);
+            setNeedToShowToc(false);
+            setLastWebLink(null);
+            //setTopicMode(true);
         }
         else if (lastSearchMessage.equals("")){
             // случай, когда пользователь послал картинку или документ
@@ -318,6 +355,7 @@ public class User implements Serializable{
             setTopic_name(null);
             setButtonsMode(BUTTONS_MODE.NONE);
             setNeedToShowToc(false);
+            setSimilarTopics(null);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.NEXT)){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
@@ -367,13 +405,14 @@ public class User implements Serializable{
             }
             setNeedToShowToc(true);
 
+            setSimilarTopics(httpModule.getSimilarTopics());
         }
 
         // если надо показать меню, то показываем меню. иначе отправляем сообщение
         if (isNeedShowToc()){
-            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name(), isTopicMode, getLastWebLink());
+            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name(), isTopicMode, getLastWebLink(),needToShowSimilarTopics());
         } else {
-            wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),getModeButtons());
+            wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),getModeButtons(), getSimilarTopics());
         }
 
         // запуск новой нити для автоматической отправки случайной статьи по истечении таймера
