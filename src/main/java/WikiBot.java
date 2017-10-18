@@ -209,6 +209,7 @@ public class WikiBot extends TelegramLongPollingBot {
                 inlineKeyboardButton.setText(topicName);
 
                 String topic = topicName;
+                topic = topic.replaceAll("—", "");
                 if (topic.length() > 30){
                     topic = topic.substring(0,30);
                 }
@@ -258,6 +259,7 @@ public class WikiBot extends TelegramLongPollingBot {
             list = new ArrayList<InlineKeyboardButton>();
             InlineKeyboardButton buttonLink = new InlineKeyboardButton();
             buttonLink.setText("\uD83C\uDF10 Открыть в браузере");
+            link = link.replaceAll("—", "-");
             buttonLink.setUrl(link);
             list.add(buttonLink);
             lists.add(list);

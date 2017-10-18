@@ -48,6 +48,7 @@ public class HttpModule {
     }
     public ArrayList<String> searchTopicInWikiWithToc(String searchMessage){
         ArrayList<String> text = new ArrayList<String>(); // результирующий список
+        GoogleSender googleSender = new GoogleSender();
         // первый пункт меню добавляем сразу
         tocList.put("Просмотр статьи с начала", "0");
         // объявляем документ
@@ -59,6 +60,7 @@ public class HttpModule {
                 doc = Jsoup.connect("https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
                 similarTopics = new ArrayList<String>();
+                TOPIC_NAME = doc.body().getElementsByTag("h1").text();
             }
             else {
                 /*
@@ -66,9 +68,11 @@ public class HttpModule {
                 doc = Jsoup.connect(link).get();
                 similarTopics = GoogleSender.getSimilarTopics(searchMessage, true);
                 */
-                doc = GoogleSender.googleIt(searchMessage.trim(),true);
+
+                doc = googleSender.googleIt(searchMessage.trim(),true);
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
-                similarTopics = GoogleSender.getSimilarTopics();
+                similarTopics = googleSender.getSimilarTopics();
+                TOPIC_NAME = googleSender.getTopicName();
             }
 
 
@@ -107,7 +111,7 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","metadata plainlinks navigation-box").remove(); // удаляем таблички
 
         // забираем заголовок
-        TOPIC_NAME = GoogleSender.getTopicName();
+
         // удаляем заголовок
         tags.getElementsByTag("h1").remove();
 
@@ -220,6 +224,7 @@ public class HttpModule {
     }
     public ArrayList<String> searchQuotesInWikiWithToc(String searchMessage){
         ArrayList<String> text = new ArrayList<String>(); // результирующий список
+        GoogleSender googleSender = new GoogleSender();
         tocList.put("Просмотр цитат с начала", "0");
         Document doc; // объявляем документ
         try {
@@ -228,6 +233,7 @@ public class HttpModule {
                 doc = Jsoup.connect("https://ru.wikiquote.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%A1%D0%BB%D1%83%D1%87%D0%B0%D0%B9%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0").get();
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
                 similarTopics = new ArrayList<String>();
+                TOPIC_NAME = doc.body().getElementsByTag("h1").text();
             }
             else {
                 /*
@@ -235,9 +241,10 @@ public class HttpModule {
                 doc = Jsoup.connect(link).get();
                 similarTopics = GoogleSender.getSimilarTopics(searchMessage, false);
                 */
-                doc = GoogleSender.googleIt(searchMessage.trim(),false);
+                doc = googleSender.googleIt(searchMessage.trim(),false);
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
-                similarTopics = GoogleSender.getSimilarTopics();
+                similarTopics = googleSender.getSimilarTopics();
+                TOPIC_NAME = googleSender.getTopicName();
             }
 
 
@@ -277,7 +284,7 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","infobox sisterproject noprint wikipedia-box").remove(); // удаляем таблички
 
         // забираем заголовок
-        TOPIC_NAME = GoogleSender.getTopicName();
+
         // удаляем заголовок
         tags.getElementsByTag("h1").remove();
 
