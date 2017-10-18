@@ -165,7 +165,7 @@ public class Db {
                 newUser.setListOfCases(loadListOfCases(rs.getString("listOfCases")));
                 newUser.setTopic_name(rs.getString("topic_name"));
                 newUser.setNeedToShowToc(Boolean.parseBoolean(rs.getString("isNeedShowToc")));
-                newUser.setTopicsMode(Boolean.parseBoolean(rs.getString("isTopicsMode")));
+                newUser.setTopicMode(Boolean.parseBoolean(rs.getString("isTopicsMode")));
                 newUser.setLastWebLink(rs.getString("lastWebLink"));
                 // добавляем в список ID пользователя
                 loadedUsersIdsList.add(newUser.getUserId());

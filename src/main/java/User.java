@@ -4,8 +4,38 @@ import java.util.List;
 import java.util.Map;
 
 public class User implements Serializable{
+    public User(Integer userId) {
+        UserId = userId;
+    }
+
     public static List<User> usersList = new ArrayList<User>();
     private static ArrayList<Integer> usersIdsList = new ArrayList<Integer>(); // список известных ИД пользователей
+
+    // метод проверяет известный это пользователь или нет
+    public static boolean isUserOld(Integer userId){
+        return usersIdsList.contains(userId);
+    }
+    // добавить ИД в список известных пользователей
+    public static void addId(Integer id){
+        usersIdsList.add(id);
+    }
+    // метод возвращает пользователя из списка пользователей по его ИД
+    public static User getCurrentUserForWork(Integer userId){
+        // объявляем индекс
+        int index = 0;
+        // идем по списку пользователей, известых боту
+        for (int i = 0; i < usersList.size(); i++) {
+            // если id известного пользователя совпадает с id пользователя из апдейта, то
+            if (User.usersList.get(i).getUserId().equals(userId)){
+                // сохраняем индекс
+                index = i;
+                break;
+            }
+        }
+        // возвращаем индекс
+        return usersList.get(index);
+    }
+
     private Integer UserId; // ИД пользователя
     private String firstName;
     private String lastName;
@@ -43,56 +73,43 @@ public class User implements Serializable{
     private String lastSearchMessage; // последнее сообщение, которое он искал
     private int indexOfParagraph = 0; // номер параграфа
     private ArrayList<String> listOfParagraphs; // список параграфов
-    private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
     private String modeOfButtons; // нужны кнопки при отправке сообщения поьзователю или нет
     private Map<String, String> toc; // меню статьи
     private ArrayList<String> listOfCases = new ArrayList<String>();
     private String topic_name; // название статьи в Википедии
-    private String topic_random_name; // название случайной статьи в Википедии(задается в отдельной нити)
     private boolean isNeedShowToc; // надо ли показывать меню
-    private boolean isTopicsMode = true; // true - Topics, false - Quotes
+    private boolean isTopicMode = true; // true - Topics, false - Quotes
     private String lastWebLink;
-
-    private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
-    private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
-
 
     public void setLastSearchMessage(String lastSearchMessage){
         this.lastSearchMessage = lastSearchMessage;
     }
-    public String getLastWebLink() {
-        return lastWebLink;
+    public String getLastSearchMessage() {
+        return lastSearchMessage;
     }
-    public void setLastWebLink(String lastWebLink) {
-        this.lastWebLink = lastWebLink;
+    public void setIndexOfParagraph(int indexOfParagraph){
+        if (indexOfParagraph > getListOfParagraphs().size()){
+            this.indexOfParagraph = getListOfParagraphs().size() - 1;
+        }
+        else {
+            this.indexOfParagraph = indexOfParagraph;
+        }
     }
-    public void setListOfCases(ArrayList<String> listOfCases) {
-        this.listOfCases = listOfCases;
+    public int getIndexOfParagraph(){
+        return indexOfParagraph;
     }
-
-    public Map<String, String> getToc() {
-        return toc;
+    public void setListOfParagraphs(ArrayList<String> listOfParagraphs) {
+        indexOfParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
+        this.listOfParagraphs = listOfParagraphs;
     }
-    public ArrayList<String> getListOfCases(){
-        return listOfCases;
+    public ArrayList<String> getListOfParagraphs() {
+        return listOfParagraphs;
     }
-    public boolean getTopicMode(){
-        return isTopicsMode;
+    public void setButtonsMode(String modeOfButtons) {
+        this.modeOfButtons = modeOfButtons;
     }
-    public void setTopicsMode(boolean isTopicsMode){
-        this.isTopicsMode = isTopicsMode;
-    }
-    public void setTopic_name(String TOPIC_NAME){
-        topic_name = TOPIC_NAME;
-    }
-    public String getTopic_name(){
-        return topic_name;
-    }
-    public void setTopic_random_name(String TOPIC_NAME){
-        topic_random_name = TOPIC_NAME;
-    }
-    public String getTopic_random_name(){
-        return topic_random_name;
+    public String getModeButtons() {
+        return modeOfButtons;
     }
     public void setToc(Map<String, String> toc){
         this.toc = toc;
@@ -106,6 +123,21 @@ public class User implements Serializable{
         }
 
     }
+    public Map<String, String> getToc() {
+        return toc;
+    }
+    public void setListOfCases(ArrayList<String> listOfCases) {
+        this.listOfCases = listOfCases;
+    }
+    public ArrayList<String> getListOfCases(){
+        return listOfCases;
+    }
+    public void setTopic_name(String TOPIC_NAME){
+        topic_name = TOPIC_NAME;
+    }
+    public String getTopic_name(){
+        return topic_name;
+    }
     public void setNeedToShowToc(boolean needToShowToc){
         if (toc != null)
             this.isNeedShowToc = needToShowToc;
@@ -113,109 +145,19 @@ public class User implements Serializable{
     public boolean isNeedShowToc(){
         return isNeedShowToc;
     }
-    public void setWikiBot(WikiBot wikiBot){
-        // если вики бот еще не был проинициализирован у пользователя, то проинициализировать
-        if (this.wikiBot == null){
-            this.wikiBot = wikiBot;
-        }
+    public void setTopicMode(boolean isTopicMode){
+        this.isTopicMode = isTopicMode;
     }
-    // конструктор
-    public User(Integer userId) {
-        UserId = userId;
+    public boolean getTopicMode(){
+        return isTopicMode;
     }
-    public static void saveUsersToDB(){
-        // создаем БД
-        Db.createNewDatabase("Users.db");
-        // создаем табличку UserTable
-        Db.createNewTable();
-        // коннектимся к ней
-        Db.connect();
-        // идем по всем пользователям
-        int index;
-        for (int i = 0; i < usersList.size(); i++) {
-            index = i + 1;
-            // проверяем существует ли пользователь в БД
-            if (Db.isUserExist(index)){
-                // если существует, то апдейтим пользователя
-                Db.updateUser(index,usersList.get(i));
-            } else {
-                // если не сущестсует, то инсертим пользователя
-                Db.insertNewUser(usersList.get(i));
-            }
-        }
-        // закрываем соединение к БД
-        Db.close();
+    public void setLastWebLink(String lastWebLink) {
+        this.lastWebLink = lastWebLink;
     }
-    public static void loadUsersFromDB(){
-        // создаем БД
-        Db.createNewDatabase("Users.db");
-        // создаем табличку UserTable
-        Db.createNewTable();
-        // коннектимся к ней
-        Db.connect();
-        // загружаем пользователей
-        usersList = Db.loadUsers();
-        usersIdsList = Db.getLoadedUsersIdsList();
-        // закрываем соединение к БД
-        Db.close();
-        System.out.println("Users was loaded");
-    }
-    // метод возвращает пользователя из списка пользователей по его ИД
-    public static User getCurrentUserForWork(Integer userId){
-        // объявляем индекс
-        int index = 0;
-        // идем по списку пользователей, известых боту
-        for (int i = 0; i < usersList.size(); i++) {
-            // если id известного пользователя совпадает с id пользователя из апдейта, то
-            if (User.usersList.get(i).getUserId().equals(userId)){
-                // сохраняем индекс
-                index = i;
-                break;
-            }
-        }
-        // возвращаем индекс
-        return usersList.get(index);
-    }
-    public WikiBot getWikiBot() {
-        return wikiBot;
-    }
-    // метод посылает сообщение пользователю с помощью бота
-    public void activateNewTimerThread(){
-        // если есть текущая запущенная нить, то прерываем ее
-        if (autoSendRandomMessage != null){
-            autoSendRandomMessage.interrupt();
-        }
-        // создаем и запускаем новую нить отправки автоматического сообщения
-        AutoSendThread autoSendThread = new AutoSendThread(this);
-        autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
-
+    public String getLastWebLink() {
+        return lastWebLink;
     }
 
-    public String getModeButtons() {
-        return modeOfButtons;
-    }
-    public void setButtonsMode(String modeOfButtons) {
-        this.modeOfButtons = modeOfButtons;
-    }
-    // метод проверяет известный это пользователь или нет
-    public static boolean isUserOld(Integer userId){
-        return usersIdsList.contains(userId);
-    }
-    // добавить ИД в список известных пользователей
-    public static void addId(Integer id){
-        usersIdsList.add(id);
-    }
-    public int getIndexOfParagraph(){
-        return indexOfParagraph;
-    }
-    public void setIndexOfParagraph(int indexOfParagraph){
-        if (indexOfParagraph > getListOfParagraphs().size()){
-            this.indexOfParagraph = getListOfParagraphs().size() - 1;
-        }
-        else {
-            this.indexOfParagraph = indexOfParagraph;
-        }
-    }
     public void incrementIndex(){
         // если список параграфов пустой, то индекс всегда ноль
         if (listOfParagraphs == null ) {
@@ -250,30 +192,6 @@ public class User implements Serializable{
         } else  {
             return listOfParagraphs.get(indexOfParagraph);
         }
-    }
-    public ArrayList<String> getListOfRandomParagraphs() {
-        return listOfRandomParagraphs;
-    }
-    public void setListOfRandomParagraphs(ArrayList<String> listOfParagraphs) {
-        this.listOfRandomParagraphs = listOfParagraphs;
-    }
-    public ArrayList<String> getListOfParagraphs() {
-        return listOfParagraphs;
-    }
-    public void setListOfParagraphs(ArrayList<String> listOfParagraphs) {
-        indexOfParagraph = 0; // сбрасываем счетчик каждый раз, когда записываем новый массив параграфов
-        this.listOfParagraphs = listOfParagraphs;
-        /*
-        if (this.listOfParagraphs == null || this.listOfParagraphs.size() == 1){
-            setButtonsMode(BUTTONS_MODE.NONE);
-        } else {
-            setButtonsMode(BUTTONS_MODE.DEFAULT);
-        }
-        */
-
-    }
-    public String getLastSearchMessage() {
-        return lastSearchMessage;
     }
     public boolean checkContainsListOfCases(String lastSearchMessage){
         try {
@@ -356,7 +274,7 @@ public class User implements Serializable{
 
             setButtonsMode(BUTTONS_MODE.SEARCH_MODE);
 
-            setTopicsMode(true);
+            setTopicMode(true);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.QUOTES)){
             setLastSearchMessage(null);
@@ -374,14 +292,14 @@ public class User implements Serializable{
 
             setButtonsMode(BUTTONS_MODE.SEARCH_MODE);
 
-            setTopicsMode(false);
+            setTopicMode(false);
         }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.RANDOM)){
             // случай, когда пользователь нажал показать случайную статью
             setLastSearchMessage(null);
 
             HttpModule httpModule = new HttpModule();
-            if (isTopicsMode){
+            if (isTopicMode){
                 setListOfParagraphs(httpModule.searchTopicInWikiWithToc("/random"));
             } else {
                 setListOfParagraphs(httpModule.searchQuotesInWikiWithToc("/random"));
@@ -438,7 +356,7 @@ public class User implements Serializable{
             HttpModule httpModule = new HttpModule();
 
             // ищем новые параграфы
-            if (isTopicsMode){
+            if (isTopicMode){
                 setListOfParagraphs(httpModule.searchTopicInWikiWithToc(this.lastSearchMessage));
             } else {
                 setListOfParagraphs(httpModule.searchQuotesInWikiWithToc(this.lastSearchMessage));
@@ -458,7 +376,7 @@ public class User implements Serializable{
 
         // если надо показать меню, то показываем меню. иначе отправляем сообщение
         if (isNeedShowToc()){
-            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name(),isTopicsMode, getLastWebLink());
+            wikiBot.mySendTocMessage(getLastChatId(),toc,getTopic_name(), isTopicMode, getLastWebLink());
         } else {
             wikiBot.mySendMessage(getLastChatId(),getMessageForReply(),getModeButtons());
         }
@@ -468,8 +386,81 @@ public class User implements Serializable{
         activateNewTimerThread();
     }
 
+    private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
+    public void setWikiBot(WikiBot wikiBot){
+        // если вики бот еще не был проинициализирован у пользователя, то проинициализировать
+        if (this.wikiBot == null){
+            this.wikiBot = wikiBot;
+        }
+    }
+    public WikiBot getWikiBot() {
+        return wikiBot;
+    }
+    // метод посылает сообщение пользователю с помощью бота
+
+    private transient Thread autoSendRandomMessage; // дополнительная нить пользователя для отправки сообщений по таймеру
+    private String topic_random_name; // название случайной статьи в Википедии(задается в отдельной нити)
+    private ArrayList<String> listOfRandomParagraphs; // список параграфов случайной статьи
+
+    public void setTopic_random_name(String TOPIC_NAME){
+        topic_random_name = TOPIC_NAME;
+    }
+    public String getTopic_random_name(){
+        return topic_random_name;
+    }
+    public ArrayList<String> getListOfRandomParagraphs() {
+        return listOfRandomParagraphs;
+    }
+    public void setListOfRandomParagraphs(ArrayList<String> listOfParagraphs) {
+        this.listOfRandomParagraphs = listOfParagraphs;
+    }
+    public void activateNewTimerThread(){
+        // если есть текущая запущенная нить, то прерываем ее
+        if (autoSendRandomMessage != null){
+            autoSendRandomMessage.interrupt();
+        }
+        // создаем и запускаем новую нить отправки автоматического сообщения
+        AutoSendThread autoSendThread = new AutoSendThread(this);
+        autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
+
+    }
 
 
-
-
+    public static void saveUsersToDB(){
+        // создаем БД
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // идем по всем пользователям
+        int index;
+        for (int i = 0; i < usersList.size(); i++) {
+            index = i + 1;
+            // проверяем существует ли пользователь в БД
+            if (Db.isUserExist(index)){
+                // если существует, то апдейтим пользователя
+                Db.updateUser(index,usersList.get(i));
+            } else {
+                // если не сущестсует, то инсертим пользователя
+                Db.insertNewUser(usersList.get(i));
+            }
+        }
+        // закрываем соединение к БД
+        Db.close();
+    }
+    public static void loadUsersFromDB(){
+        // создаем БД
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // загружаем пользователей
+        usersList = Db.loadUsers();
+        usersIdsList = Db.getLoadedUsersIdsList();
+        // закрываем соединение к БД
+        Db.close();
+        System.out.println("Users was loaded");
+    }
 }
