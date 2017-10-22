@@ -1,11 +1,14 @@
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Db {
     private static String fileNameDb;
-    private static String path = "C:/Users/Ирина/IdeaProjects/WikiBot/";
+    private static String path = "C:\\Users\\Ирина\\IdeaProjects\\WikiBot\\";
     private static String table_Users = "Users";
     private static String table_UserStates = "UserStates";
     private static Connection conn = null;
@@ -34,6 +37,7 @@ public class Db {
             + "	isTopicsMode text, \n"
             + "	lastWebLink text ,\n"
             + "	similarTopics text ,\n"
+            + "	lastDateUpdate text ,\n"
             + "FOREIGN KEY (id_in_table_Users) REFERENCES Users(id)"
             + ");";
     /** Запрос на вставку новых данных в таблицу Users
@@ -60,8 +64,9 @@ public class Db {
             "isNeedShowToc," +
             "isTopicsMode," +
             "lastWebLink," +
-            "similarTopics)" +
-            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?,?) ";
+            "similarTopics," +
+            "lastDateUpdate)" +
+            "VALUES((SELECT Users.id FROM Users WHERE Users.UserId = ?),?,?,?,?,?,?,?,?,?,?,?,?) ";
     /** Обновление таблицы Users */
     private static String UPDATE_SQL_STATEMENT_IN_USERS = "UPDATE " + table_Users + " "
             + "SET UserId = ? , " +
@@ -83,7 +88,8 @@ public class Db {
             "isNeedShowToc = ?, " +
             "isTopicsMode = ?," +
             "lastWebLink = ?," +
-            "similarTopics = ?" +
+            "similarTopics = ?," +
+            "lastDateUpdate = ?" +
             "WHERE UserStates.id_in_table_Users = ?";
     // ID пользователей
     private static ArrayList<Integer> loadedUsersIdsList = new ArrayList<Integer>();
@@ -181,6 +187,8 @@ public class Db {
                 newUser.setLastWebLink(rs.getString("lastWebLink"));
 
                 newUser.setSimilarTopics(loadSimilarTopics(rs.getString("similarTopics")));
+
+                newUser.setLastDateUpdate(rs.getString("lastDateUpdate"));
                 // добавляем в список ID пользователя
                 loadedUsersIdsList.add(newUser.getUserId());
                 // добавляем пользователя в список пользователей
@@ -244,8 +252,9 @@ public class Db {
             pstmt.setString(9, user.getTopicMode() + "");
             pstmt.setString(10, user.getLastWebLink());
             pstmt.setString(11, getPreparedDataSimilarTopics(user));
+            pstmt.setString(12, getPreparedLastDateUpdate(user));
             // по id понимаем, какую запись обновлять
-            pstmt.setInt(12, id);
+            pstmt.setInt(13, id);
             // выполняем апдейт
             pstmt.executeUpdate();
 
@@ -303,6 +312,11 @@ public class Db {
         }
         return listOfCasesString.toString();
     }
+    public static String getPreparedLastDateUpdate(User user){
+        DateFormat format = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+
+        return format.format(user.getLastDateUpdate());
+    }
     // вставляем нового пользователя в БД
     public static void insertNewUser(User user){
         try {
@@ -332,6 +346,7 @@ public class Db {
             pstmt.setString(10, user.getTopicMode() + "");
             pstmt.setString(11, user.getLastWebLink());
             pstmt.setString(12, getPreparedDataSimilarTopics(user));
+            pstmt.setString(13, getPreparedLastDateUpdate(user));
             // выполняем запрос
             pstmt.executeUpdate();
             //System.out.println("=== User was inserted ===");

@@ -12,9 +12,10 @@ public class Main {
         WikiBot wikiBot = new WikiBot();
         try {
             System.out.println("Start bot"); // в консоль, что бот запущен
+            User.loadUsersFromDB();
             botsApi.registerBot(wikiBot); // запуск бота
             //User.loadUsers(); // грузим известных пользователей
-            User.loadUsersFromDB();
+
             /* HttpModule httpModule = new HttpModule();
              httpModule.searchQuotesInWikiWithToc("Начало"); */
         } catch (TelegramApiException e) {

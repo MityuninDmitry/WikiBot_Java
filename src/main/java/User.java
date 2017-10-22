@@ -1,5 +1,9 @@
 import java.io.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +85,9 @@ public class User implements Serializable{
     private boolean isTopicMode = true; // true - Topics, false - Quotes
     private String lastWebLink;
     private ArrayList<String> similarTopics = new ArrayList<String>();
+    private Date lastDateUpdate;
+
+
 
     public void setLastSearchMessage(String lastSearchMessage){
         this.lastSearchMessage = lastSearchMessage;
@@ -137,7 +144,7 @@ public class User implements Serializable{
         return topic_name;
     }
     public void setNeedToShowToc(boolean needToShowToc){
-        if (toc == null || toc.size() <= 1){
+        if (toc == null){
             this.isNeedShowToc = false;
         } else {
             this.isNeedShowToc = needToShowToc;
@@ -168,7 +175,33 @@ public class User implements Serializable{
     public ArrayList<String> getSimilarTopics() {
         return similarTopics;
     }
+    public Date getLastDateUpdate() {
+        return lastDateUpdate;
+    }
+    public void setLastDateUpdate(Date lastDateUpdate) {
+        this.lastDateUpdate = lastDateUpdate;
+    }
+    public void setLastDateUpdate(String lastDateUpdate) {
+        DateFormat format = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+        try {
+            this.lastDateUpdate = format.parse(lastDateUpdate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public void updateLastDateUpdate(){
+        DateFormat format = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+        Date lastUpdate = new Date();
+        String string = format.format(lastUpdate);
+
+        try {
+            lastDateUpdate = format.parse(string);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        //System.out.println(lastDateUpdate);
+    }
     public void incrementIndex(){
         if (indexOfParagraph < listOfParagraphs.size() - 1) {
             indexOfParagraph++;
@@ -210,7 +243,8 @@ public class User implements Serializable{
         }
     }
     // при установке нового последнего сообщения пользователя, сразу же обнволяем список параграфов для вывода
-    public void setLastSearchMessageAndUpdateListOfParagraphs(String lastSearchMessage) {
+    public void parseLastMessageAndSendReply(String lastSearchMessage) {
+        updateLastDateUpdate();
         // если сообщение null, то пользователь послал документ или картинку
         if (lastSearchMessage == null) lastSearchMessage = "";
         // если пользователь ввел старт или помощь, то соответствующее сообщение
@@ -251,7 +285,8 @@ public class User implements Serializable{
                     "6. В оглавлении вы можете начать просмотр статьи:\n" +
                     "6.1 Либо с самого начала \n" +
                     "6.2 Либо с соответстствующего пункта оглавления\n" +
-                    "6.3 Также внизу будут кнопки поиска случайной статьи и смены режима поиска \n" +
+                    "6.3 Ниже будут кнопки для поиска случайной статьи, смены режима поиска," +
+                    " открытия статьи в браузере и просмотра похожих статей по найденной теме.\n" +
                     "7. Во время просмотра статьи в вашем распоряжении будут три кнопки:\n" +
                     "7.1 ⬅️ - посмотреть предыдущий параграф статьи\n" +
                     "7.2 \uD83D\uDCD7 - вернуться к оглавлению статьи\n" +
@@ -362,6 +397,20 @@ public class User implements Serializable{
             setNeedToShowToc(false);
             setSimilarTopics(null);
         }
+        else if (lastSearchMessage.equals(RESERVED_ANSWER.COUNT_USERS)){
+            // случай, когда пользователь послал картинку или документ
+            //setLastSearchMessage(null);
+            ArrayList<String> text = new ArrayList<String>();
+            text.add("Текущее количество пользователей: " + usersList.size());
+            setListOfParagraphs(text);
+            setToc(null);
+            setListOfCases(getToc());
+            setTopic_name(null);
+            setButtonsMode(BUTTONS_MODE.NONE);
+            setNeedToShowToc(false);
+            setSimilarTopics(null);
+            setLastWebLink(null);
+        }
         else if (lastSearchMessage.equals(RESERVED_ANSWER.NEXT)){
             // в зависимости от того, какую кнопку нажал пользователь мы увеличиваем или уменьшаем счетчик страницы
             incrementIndex();
@@ -421,7 +470,7 @@ public class User implements Serializable{
         }
 
         // запуск новой нити для автоматической отправки случайной статьи по истечении таймера
-        activateNewTimerThread();
+        //activateNewTimerThread();
     }
 
     private transient WikiBot wikiBot; // инстанс бота для отправки сообщений
@@ -463,7 +512,26 @@ public class User implements Serializable{
 
     }
 
-
+    public void saveUserToDB(){
+        // создаем БД
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // получаем id пользователя в списке
+        int index = usersList.indexOf(this) + 1;
+        // проверяем существует ли пользователь в БД
+        if (Db.isUserExist(index)){
+            // если существует, то апдейтим пользователя
+            Db.updateUser(index,this);
+        } else {
+            // если не сущестсует, то инсертим пользователя
+            Db.insertNewUser(this);
+        }
+        // закрываем соединение к БД
+        Db.close();
+    }
     public static void saveUsersToDB(){
         // создаем БД
         Db.createNewDatabase("Users.db");

@@ -63,19 +63,11 @@ public class HttpModule {
                 TOPIC_NAME = doc.body().getElementsByTag("h1").text();
             }
             else {
-                /*
-                setLink("https://ru.wikipedia.org/wiki/" + searchMessage.trim());
-                doc = Jsoup.connect(link).get();
-                similarTopics = GoogleSender.getSimilarTopics(searchMessage, true);
-                */
-
                 doc = googleSender.googleIt(searchMessage.trim(),true);
                 setLink(doc.getElementsByAttributeValue("rel","canonical").attr("href"));
                 similarTopics = googleSender.getSimilarTopics();
                 TOPIC_NAME = googleSender.getTopicName();
             }
-
-
         }
         catch (HttpStatusException e) { // если 500, 404 ошибки, то
             e.printStackTrace(); // печатаем трейс
@@ -109,6 +101,7 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","thumb tright").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","thumbinner").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","metadata plainlinks navigation-box").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","printfooter").remove(); // удаляем таблички
 
         // забираем заголовок
 
@@ -210,6 +203,33 @@ public class HttpModule {
 
             }
         }
+        // удаляем из мапы меню заголовки примечание, литература, ссылки, см. также
+        // запоминая при этом их значения
+        ArrayList<String> valuesList = new ArrayList<String>();
+        for (Map.Entry<String,String> tocElement: tocList.entrySet()){
+            if (tocElement.getKey().equals("Примечания") ||
+                    tocElement.getKey().equals("См. также") ||
+                    tocElement.getKey().equals("Литература") ||
+                    tocElement.getKey().equals("Ссылки")) {
+                valuesList.add(tocElement.getValue());
+
+            }
+        }
+        tocList.remove("Примечания");
+        tocList.remove("См. также");
+        tocList.remove("Литература");
+        tocList.remove("Ссылки");
+        // находим наименьшее значение из них
+
+        // удаляем из текста от этого значения до конца
+        if (valuesList.size() > 0){
+            Collections.sort(valuesList);
+            while (text.size() != Integer.parseInt(valuesList.get(0))){
+                text.remove(text.size() - 1);
+            }
+        }
+
+
         /*
         System.out.println("============ MENU =============");
         for (Map.Entry<String,String> map: tocList.entrySet()){
@@ -220,6 +240,7 @@ public class HttpModule {
             System.out.println(text.get(i));
         }
         */
+        text.add("Вы достигли конца статьи.");
         return text;
     }
     public ArrayList<String> searchQuotesInWikiWithToc(String searchMessage){
@@ -385,6 +406,31 @@ public class HttpModule {
 
             }
         }
+        // удаляем из мапы меню заголовки примечание, литература, ссылки, см. также
+        // запоминая при этом их значения
+        ArrayList<String> valuesList = new ArrayList<String>();
+        for (Map.Entry<String,String> tocElement: tocList.entrySet()){
+            if (tocElement.getKey().equals("Примечания") ||
+                    tocElement.getKey().equals("См. также") ||
+                    tocElement.getKey().equals("Литература") ||
+                    tocElement.getKey().equals("Ссылки")) {
+                valuesList.add(tocElement.getValue());
+
+            }
+        }
+        tocList.remove("Примечания");
+        tocList.remove("См. также");
+        tocList.remove("Литература");
+        tocList.remove("Ссылки");
+        // находим наименьшее значение из них
+        if (valuesList.size() > 0){
+            Collections.sort(valuesList);
+            while (text.size() != Integer.parseInt(valuesList.get(0))){
+                text.remove(text.size() - 1);
+            }
+        }
+
+        text.add("Вы достигли конца статьи.");
         /*
         System.out.println("============ MENU =============");
         for (Map.Entry<String,String> map: tocList.entrySet()){
