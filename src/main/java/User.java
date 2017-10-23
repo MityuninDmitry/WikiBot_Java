@@ -178,9 +178,6 @@ public class User implements Serializable{
     public Date getLastDateUpdate() {
         return lastDateUpdate;
     }
-    public void setLastDateUpdate(Date lastDateUpdate) {
-        this.lastDateUpdate = lastDateUpdate;
-    }
     public void setLastDateUpdate(String lastDateUpdate) {
         DateFormat format = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
         try {
@@ -401,7 +398,8 @@ public class User implements Serializable{
             // случай, когда пользователь послал картинку или документ
             //setLastSearchMessage(null);
             ArrayList<String> text = new ArrayList<String>();
-            text.add("Текущее количество пользователей: " + usersList.size());
+            int size = Db.countOfUsers();
+            text.add("Текущее количество пользователей: " + size);
             setListOfParagraphs(text);
             setToc(null);
             setListOfCases(getToc());
@@ -511,7 +509,25 @@ public class User implements Serializable{
         autoSendRandomMessage = autoSendThread.t; // инициализируем переменную
 
     }
-
+    public void saveUserToDBv2(){
+        // создаем БД
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // проверяем существует ли пользователь в БД
+        if (Db.isUserExist(this.getUserId().toString())){
+            // если существует, то апдейтим пользователя
+            int index = Db.getUserIndex(this.getUserId().toString());
+            Db.updateUser(index,this);
+        } else {
+            // если не сущестсует, то инсертим пользователя
+            Db.insertNewUser(this);
+        }
+        // закрываем соединение к БД
+        Db.close();
+    }
     public void saveUserToDB(){
         // создаем БД
         Db.createNewDatabase("Users.db");

@@ -1,7 +1,6 @@
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.api.objects.replykeyboard.ForceReplyKeyboard;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -13,7 +12,6 @@ import java.util.*;
 public class WikiBot extends TelegramLongPollingBot {
 
     public void onUpdateReceived(Update update) {
-
         // выводим апдейт в консоль
         System.out.println(update.toString());
         // заводим переменные чатИд и текст для ответа, индекс пользователя из списка пользователей
@@ -39,16 +37,6 @@ public class WikiBot extends TelegramLongPollingBot {
             // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getMessage().getText();
             // смотрим изветнсый это пользователь или нет
-            if (!User.isUserOld(userId)){
-                // создать нового пользователя
-                User newUser = new User(userId);
-                // пишем в консоль об этом
-                System.out.println("new user");
-                // сохранить его в список известных пользователей бота
-                User.usersList.add(newUser);
-                // сохранить ИД в список ИДов у класса пользователь
-                User.addId(userId);
-            }
         }
         else {
             // если это CallbackQuery запрос
@@ -72,8 +60,28 @@ public class WikiBot extends TelegramLongPollingBot {
             // получаем последнее сообщение из апдейта
             messageFromLastUpdate = update.getCallbackQuery().getData();
         }
+        // создаем ДБ
+        Db.createNewDatabase("Users.db");
+        // создаем табличку UserTable
+        Db.createNewTable();
+        // коннектимся к ней
+        Db.connect();
+        // Если пользователь есть в БД с таким userId, то выгружаем в него данные
+        if (Db.isUserExist(userId.toString())){
+            currentUser = Db.loadUser(userId.toString());
+        }
+        // иначе создаем нового пользователя
+        else {
+            currentUser = new User(userId);
+            // пишем в консоль об этом
+            System.out.println("new user");
+        }
+        // закрываем соединение к БД
+        Db.close();
+
+        // если нет, то создаем нового пользователя
         // текущий пользователь из массива известных пользователей
-        currentUser = User.getCurrentUserForWork(userId);
+        //currentUser = User.getCurrentUserForWork(userId);
         // устанавливаем пользователю последний чатИД
         currentUser.setLastChatId(chatId);
         currentUser.setFirstName(firstName);
@@ -88,8 +96,8 @@ public class WikiBot extends TelegramLongPollingBot {
         // p.s не уверен, что это разумно, т.к если будет много апдейтов, то будет большая нагрузка
         //User.saveUsers();
         //User.saveUsersToDB();
-        currentUser.saveUserToDB();
-
+        //currentUser.saveUserToDB();
+        currentUser.saveUserToDBv2();
 
     }
     public String getBotUsername() {
@@ -209,8 +217,9 @@ public class WikiBot extends TelegramLongPollingBot {
             listStars.add(buttonStars);
 
             listInstruction.add(buttonInstruction);
-            lists.add(listInstruction);
+
             lists.add(listNavigation);
+            lists.add(listInstruction);
             lists.add(listStars);
 
             inlineKeyboardMarkup.setKeyboard(lists);

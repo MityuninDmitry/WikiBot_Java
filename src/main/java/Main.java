@@ -12,7 +12,7 @@ public class Main {
         WikiBot wikiBot = new WikiBot();
         try {
             System.out.println("Start bot"); // в консоль, что бот запущен
-            User.loadUsersFromDB();
+            //User.loadUsersFromDB();
             botsApi.registerBot(wikiBot); // запуск бота
             //User.loadUsers(); // грузим известных пользователей
 

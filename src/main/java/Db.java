@@ -154,6 +154,69 @@ public class Db {
         return result;
     }
     // загружаем пользователей из базы данных.
+    public static Integer countOfUsers(){
+        connect();
+        String sql = "SELECT id " +
+                "FROM " + table_Users;
+        int index = 1;
+        try {
+
+            PreparedStatement stmt  = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+            // loop through the result set
+            //System.out.println(rs.next());
+            while (rs.next()){
+                index = rs.getInt("id");
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        close();
+        return index;
+    }
+    public static User loadUser(String UserId){
+        User newUser = null;
+        // запрос в БД для получения сразу всех полей
+        String sql = "SELECT * " +
+                "FROM Users, UserStates " +
+                "WHERE Users.id = UserStates.id_in_table_Users and Users.UserId = " + UserId;
+        try {
+            // выполняем запрос
+            Statement stmt  = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            // идем по записям полученной таблицы
+
+            // создаем нового пользователя
+            newUser = new User( Integer.parseInt(rs.getString("UserId")));
+            // заполняем данные пользователя
+            newUser.setFirstName(rs.getString("firstName"));
+            newUser.setLastName(rs.getString("lastName"));
+            newUser.setUserName(rs.getString("userName"));
+            newUser.setLastChatId(Long.parseLong(rs.getString("lastChatId")));
+
+            newUser.setListOfParagraphs(loadListOfParagraphs(rs.getString("listOfParagraphs")));
+            newUser.setIndexOfParagraph(Integer.parseInt(rs.getString("indexOfParagraph")));
+
+            newUser.setButtonsMode(rs.getString("modeOfButtons"));
+            newUser.setToc(loadToc(rs.getString("toc")));
+            newUser.setListOfCases(loadListOfCases(rs.getString("listOfCases")));
+            newUser.setTopic_name(rs.getString("topic_name"));
+            newUser.setNeedToShowToc(Boolean.parseBoolean(rs.getString("isNeedShowToc")));
+            newUser.setTopicMode(Boolean.parseBoolean(rs.getString("isTopicsMode")));
+            newUser.setLastWebLink(rs.getString("lastWebLink"));
+
+            newUser.setSimilarTopics(loadSimilarTopics(rs.getString("similarTopics")));
+
+            newUser.setLastDateUpdate(rs.getString("lastDateUpdate"));
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        // возвращаем пользователей
+        return newUser;
+    }
     public static ArrayList<User> loadUsers(){
         ArrayList<User> users = new ArrayList<User>();
         // запрос в БД для получения сразу всех полей
@@ -202,7 +265,47 @@ public class Db {
         // возвращаем пользователей
         return users;
     }
+    public static Integer getUserIndex(String UserId){
+        String sql = "SELECT id " +
+                "FROM " + table_Users + " " +
+                "WHERE UserId = ?";
+        int index = 0;
+        try {
+            PreparedStatement stmt  = conn.prepareStatement(sql);
+            stmt.setString(1, UserId);
+            ResultSet rs = stmt.executeQuery();
+            // loop through the result set
+            //System.out.println(rs.next());
+            index = rs.getInt("id");
+
+
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return index;
+    }
     // проверка на то, есть ли в БД пользователь или нет
+    public static boolean isUserExist(String UserId){
+        boolean isExist = false;
+        String sql = "SELECT UserId " +
+                "FROM " + table_Users + " " +
+                "WHERE UserId = ?";
+        try {
+            PreparedStatement stmt  = conn.prepareStatement(sql);
+            stmt.setString(1, UserId);
+            ResultSet rs = stmt.executeQuery();
+            // loop through the result set
+            //System.out.println(rs.next());
+
+            isExist = rs.next();
+
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return isExist;
+    }
     public static boolean isUserExist(int id){
         boolean isExist = false;
         String sql = "SELECT id " +
