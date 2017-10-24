@@ -9,4 +9,5 @@ public class RESERVED_ANSWER {
     public static final String INSTRUCTION = "/instruction"; // выбрать режим поиска статей
     public static final String SIMILAR_TOPICS = "/similar"; // выбрать режим поиска статей
     public static final String COUNT_USERS = "/count_users"; // выбрать режим поиска статей
+    public static final String ABOUT = "/about"; // выбрать режим поиска статей
 }

@@ -1,6 +1,7 @@
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
+import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResultArticle;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -211,12 +212,17 @@ public class WikiBot extends TelegramLongPollingBot {
             buttonInstruction.setText("\uD83C\uDD98 Инструкция");
             buttonInstruction.setCallbackData(RESERVED_ANSWER.INSTRUCTION);
 
+            InlineKeyboardButton buttonAbout = new InlineKeyboardButton();
+            buttonAbout.setText("✍️ От автора");
+            buttonAbout.setCallbackData(RESERVED_ANSWER.ABOUT);
+
             InlineKeyboardButton buttonStars = new InlineKeyboardButton();
             buttonStars.setText("⭐ ⭐ ⭐ ⭐ ⭐");
             buttonStars.setUrl("https://telegram.me/storebot?start=mity_wiki_bot");
             listStars.add(buttonStars);
 
             listInstruction.add(buttonInstruction);
+            listInstruction.add(buttonAbout);
 
             lists.add(listNavigation);
             lists.add(listInstruction);
@@ -248,7 +254,7 @@ public class WikiBot extends TelegramLongPollingBot {
             inlineKeyboardMarkup.setKeyboard(lists);
 
             message.setReplyMarkup(inlineKeyboardMarkup);
-
+            message.disableWebPagePreview();
         }
 
         // посылаем сообщение
@@ -310,14 +316,20 @@ public class WikiBot extends TelegramLongPollingBot {
         buttonHelp.setText("ℹ️ Сменить режим поиска");
         buttonHelp.setCallbackData(RESERVED_ANSWER.START);
         list.add(buttonHelp);
-        lists.add(list);
 
-        list = new ArrayList<InlineKeyboardButton>();
+
+        //list = new ArrayList<InlineKeyboardButton>();
         InlineKeyboardButton buttonRandom = new InlineKeyboardButton();
         buttonRandom.setText("\uD83D\uDD00 Случайная статья");
         buttonRandom.setCallbackData(RESERVED_ANSWER.RANDOM);
-
         list.add(buttonRandom);
+        lists.add(list);
+
+        list = new ArrayList<InlineKeyboardButton>();
+        InlineKeyboardButton buttonShare = new InlineKeyboardButton();
+        buttonShare.setText("\uD83D\uDD4A️ Поделиться ботом");
+        buttonShare.setSwitchInlineQuery("Полезный бот для поиска статей");
+        list.add(buttonShare);
         lists.add(list);
 
         inlineKeyboardMarkup.setKeyboard(lists);

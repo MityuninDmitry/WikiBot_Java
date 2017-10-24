@@ -210,7 +210,9 @@ public class HttpModule {
             if (tocElement.getKey().equals("Примечания") ||
                     tocElement.getKey().equals("См. также") ||
                     tocElement.getKey().equals("Литература") ||
-                    tocElement.getKey().equals("Источники") ||
+                    //tocElement.getKey().equals("Источники") ||
+                    tocElement.getKey().equals("Список литературы") ||
+                    tocElement.getKey().equals("Пояснения") ||
                     tocElement.getKey().equals("Ссылки")) {
                 valuesList.add(tocElement.getValue());
 
@@ -220,7 +222,9 @@ public class HttpModule {
         tocList.remove("См. также");
         tocList.remove("Литература");
         tocList.remove("Ссылки");
-        tocList.remove("Источники");
+        //tocList.remove("Источники");
+        tocList.remove("Список литературы");
+        tocList.remove("Пояснения");
         // находим наименьшее значение из них
 
         // удаляем из текста от этого значения до конца
@@ -305,6 +309,8 @@ public class HttpModule {
         tags.getElementsByAttributeValue("class","metadata plainlinks navigation-box").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","metadata plainlinks ambox ambox-content").remove(); // удаляем таблички
         tags.getElementsByAttributeValue("class","infobox sisterproject noprint wikipedia-box").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","catlinks").remove(); // удаляем таблички
+        tags.getElementsByAttributeValue("class","printfooter").remove(); // удаляем таблички
 
         // забираем заголовок
 
@@ -415,7 +421,7 @@ public class HttpModule {
             if (tocElement.getKey().equals("Примечания") ||
                     tocElement.getKey().equals("См. также") ||
                     tocElement.getKey().equals("Литература") ||
-                    tocElement.getKey().equals("Источники") ||
+                    //tocElement.getKey().equals("Источники") ||
                     tocElement.getKey().equals("Ссылки")) {
                 valuesList.add(tocElement.getValue());
 
@@ -425,7 +431,7 @@ public class HttpModule {
         tocList.remove("См. также");
         tocList.remove("Литература");
         tocList.remove("Ссылки");
-        tocList.remove("Источники");
+        //tocList.remove("Источники");
         // находим наименьшее значение из них
         if (valuesList.size() > 0){
             Collections.sort(valuesList);
